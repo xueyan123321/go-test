@@ -3,8 +3,11 @@
 import Vue from 'vue'
 import App from './App'
 import go from 'gojs'
+import iView from 'iview'
+import 'iview/dist/styles/iview.css'
 
 Object.defineProperty(Vue.prototype, '$go', {value: go})
+Vue.use(iView)
 
 Vue.config.productionTip = false
 
