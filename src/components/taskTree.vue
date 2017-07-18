@@ -1,5 +1,5 @@
 <template>
-  <Tree :data="baseData" class="info"></Tree>
+  <Tree :data="baseData" @on-select-change='select' class="info"></Tree>
 </template>
 
 <script type="text/ecmascript-6">
@@ -7,23 +7,31 @@
     data () {
       return {
         baseData: [{
-          title: `<span class="icon"></span> parent 1`,
-          children: [{
-            title: '<span class="icon"></span> parent 1-0',
-            disabled: true,
-            children: [{
-              title: '<span class="icon"></span> leaf'
-            }, {
-              title: '<span class="icon"></span> leaf'
-            }]
-          }, {
-            title: '<span class="icon"></span> parent 1-1',
-            checked: true,
-            children: [{
-              title: '<span class="icon"></span> leaf</span>'
-            }]
-          }]
+          title: `<span class="icon"></span> 任务列表`,
+          expand: true,
+          children: []
         }]
+      }
+    },
+    created () {
+      this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {
+        console.log(res.data.content.data)
+        var tasks = res.data.content.data
+        var listTask = []
+        tasks.forEach((item) => {
+          listTask.push({title: `<span class="icon"></span>${item.name}`, id: item.id})
+        })
+        this.baseData[0].children = listTask
+        console.log(this.baseData[0].children)
+      })
+    },
+    methods: {
+      select (data) {
+        console.log(data)
+        this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/task/' + data[0].id).then((res) => {
+          console.log(res.data.content.data.viewJson)
+          this.$emit('getFile', res.data.content.data.viewJson)
+        })
       }
     }
   }

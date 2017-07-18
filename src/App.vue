@@ -1,10 +1,10 @@
 <template>
   <div id="app">
     <Menu mode="horizontal" :theme="theme1" active-name="1">
-      <Menu-item class="logo">
+      <Menu-item class="logo" name="-1">
         <span></span>
       </Menu-item>
-      <Menu-item>
+      <Menu-item name="0">
         DataWorks
       </Menu-item>
       <Menu-item name="1">
@@ -38,23 +38,33 @@
       </Submenu>
     </Menu>
     <div class="content-container">
-      <Menu :theme="theme2" width="50px">
-          <Menu-item name="1" class="left-nav"></Menu-item>
-        <router-link to="/taskTree"><Menu-item name="2" class="left-nav">任务开发</Menu-item></router-link>
-        <router-link to="/scriptsTree"><Menu-item name="3" class="left-nav">脚本开发</Menu-item></router-link>
-        <router-link to="/resourceManager"><Menu-item name="4" class="left-nav">资源管理</Menu-item></router-link>
-          <Menu-item name="5" class="left-nav">函数管理</Menu-item>
-          <Menu-item name="6" class="left-nav">表查询</Menu-item>
+      <Menu :theme="theme2" width="50px" @on-select="selectTree">
+        <Menu-item name="1" class="left-nav">任务开发</Menu-item>
+        <Menu-item name="2" class="left-nav">脚本开发</Menu-item>
       </Menu>
-      <router-view></router-view>
-      <div style="width:240px; height:80px; top: 85px; left: 210px; position:absolute; z-index: 99; background: #ffffff;">
-        <span style="display:inline-block; position:relative; text-align: center; top: 60px; font-size: 1rem; border: red 1px solid; width:90px">节点组件</span>
+
+      <taskTree v-if="showTree === '1'" v-on:getFile="showFileDia"></taskTree>
+      <scriptsTree v-else></scriptsTree>
+
+      <div style="width:240px; height:110px; top: 130px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
+        <span style="display:inline-block; position:relative; text-align: center; top: 90px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
       </div>
       <span>
-        <div id='myPaletteDiv' ref="palette" style="border: solid 1px red; width:90px; height: 50vh; background: #ffffff;position:absolute;top:100px;left: 210px;z-index: 98">
+        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:174px;left: 240px;z-index: 98">
         </div>
       </span>
       <span>
+        <Menu mode="horizontal" :theme="theme3" active-name="1" @on-select="createSaveSelect" class="create-save">
+          <Modal v-model="modelShow" title="请输入文件名称" @on-ok="createFile">
+            <input type="text" v-model="fileName">
+          </Modal>
+          <Menu-item name="1">
+              新建
+          </Menu-item>
+          <Menu-item name="2">
+              保存
+          </Menu-item>
+        </Menu>
         <div id="myDiagramDiv" ref="diagram"
              style="width:1650px; height:100vh; background-color: #ffffff; border: solid 1px black">
         </div>
@@ -62,11 +72,13 @@
     </div>
     <br>
     <button @click="showModel">show model</button>
+    <span @click="setLayout" class="auto-layout"></span>
     <p>this is {{GraphObjectModel}}</p>
     <Modal
       v-model="showCustom"
       title="普通的Modal对话框标题"
       @on-ok="submitTheProps"
+      @on-cancel="cancelCreate"
       >
       <input type="text" v-model="customProps.name">
       <p>对话框内容</p>
@@ -77,6 +89,9 @@
 
 <script>
 import Hello from './components/Hello'
+import scriptsTree from './components/scriptsTree'
+import resourceManager from './components/resourceManager'
+import taskTree from './components/taskTree'
 
 export default {
   name: 'app',
@@ -89,7 +104,12 @@ export default {
       objData: {},
       Diagram: '',
       theme1: 'dark',
-      theme2: 'light'
+      theme2: 'light',
+      theme3: 'primary',
+      modelShow: false,
+      fileName: '',
+      showTree: '1',
+      fileId: ''
     }
   },
   mounted () {
@@ -117,13 +137,6 @@ export default {
           console.log(self.showCustom)
           self.customProps.name = obj.data.name
           self.showCustom = true
-//          obj.data.text = 'one'
-//          myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray)
-        },
-        actionMove: function (e, obj) {
-//            浅拷贝出对象数据
-//          self.objData = obj.data
-          console.log(1)
         }
       },
       // the body
@@ -134,20 +147,24 @@ export default {
         stretch: go.GraphObject.fill
       },
         $(go.Shape, 'Rectangle',
-          { fill: '#ffffff',
+          { fill: '#DFF0FE',
             stroke: 'blue',
             strokeWidth: 2,
             desiredSize: new go.Size(70, 32)},
-            new go.Binding('desiredSize', 'size')),
+//          绑定设置形状属性
+            new go.Binding('desiredSize', 'size'),
+            new go.Binding('fill')),
         $(go.TextBlock,
           {margin: 5, stroke: 'black', font: '8px sans-serif', wrap: go.TextBlock.None, alignment: new go.Spot(0.5, 0.5)},
+//          类型绑定设置属性
           new go.Binding('font'),
-          new go.Binding('text').makeTwoWay(),
-          new go.Binding('alignment', 'textAlignment').makeTwoWay()),
+          new go.Binding('text'),
+          new go.Binding('alignment', 'textAlignment')),
         $(go.TextBlock,
           {margin: 5, stroke: 'black', font: 'normal small-caps bolder 14px cursive', wrap: go.TextBlock.None, overflow: go.TextBlock.OverflowEllipsis, width: 50, alignment: new go.Spot(0.5, 0.5), textAlign: 'center'},
-          new go.Binding('text', 'name').makeTwoWay(),
-          new go.Binding('width').makeTwoWay(),
+//          绑定设置名字属性
+          new go.Binding('text', 'name'),
+          new go.Binding('width'),
           new go.Binding('alignment', 'nameAlignment'))
       ),
       //  the port number
@@ -226,8 +243,7 @@ export default {
       new go.Binding('points').makeTwoWay(),
       $(go.Shape, { stroke: '#2f4f4f', strokeWidth: 2 }),
       $(go.Shape, {toArrow: 'Standard'}))
-    var nodeDataArray = [{text: 'unitOne', name: 'haha'}
-    ]
+    var nodeDataArray = []
     var linkDataArray = []
 //    完成内容nodeDataArray, linkDataArray的绑定
     myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray)
@@ -236,7 +252,6 @@ export default {
     //  get the model data
     var tool = myDiagram.toolManager.draggingTool
     tool.doDropOnto = function (e, obj) {
-      console.log(2)
       self.objData = myDiagram.model.nodeDataArray[nodeDataArray.length - 1]
       self.customProps.name = self.objData.name
       if (self.objData.status === 0) {
@@ -246,18 +261,20 @@ export default {
         myDiagram.model.setDataProperty(self.objData, 'itemArrayBottom', [{'portColor': '#ff0000', 'portId': 'bottom'}])
         myDiagram.model.setDataProperty(self.objData, 'textAlignment', new go.Spot(0.5, 0.7))
         myDiagram.model.setDataProperty(self.objData, 'nameAlignment', new go.Spot(0.5, 0.4))
-//        myDiagram.model.setDataProperty(self.objData, 'text', `\n\n\n\n\n${self.objData.text}`)
         myDiagram.model.setDataProperty(self.objData, 'size', new go.Size(150, 56))
         myDiagram.model.setDataProperty(self.objData, 'font', '6px sans-serif')
         myDiagram.model.setDataProperty(self.objData, 'width', 120)
+        myDiagram.model.setDataProperty(self.objData, 'fill', '#ffffff')
       }
-      self.objData.status = 1
     }
     this.modelData = myDiagram.model
     this.Diagram = myDiagram
   },
   components: {
-    Hello
+    Hello,
+    scriptsTree,
+    resourceManager,
+    taskTree
   },
   methods: {
     showModel () {
@@ -268,6 +285,78 @@ export default {
       var newtext = this.customProps.name
       console.log(newtext)
       this.Diagram.model.setDataProperty(this.objData, 'name', newtext)
+      this.objData.status = 1
+    },
+    setLayout () {
+      let digraphLayout = new this.$go.LayeredDigraphLayout()
+      digraphLayout.direction = 90
+      this.Diagram.layout = digraphLayout
+      var reCover = () => {
+        this.Diagram.layout = new this.$go.Layout()
+      }
+      setTimeout(reCover, 100)
+    },
+    cancelCreate () {
+      console.log(this.objData.status)
+      if (this.objData.status === 0) {
+        this.Diagram.commandHandler.deleteSelection()
+      }
+    },
+    createSaveSelect (e) {
+      if (e === '1') {
+        this.modelShow = true
+      } else {
+        console.log(this.fileName)
+        var taskForm = new FormData()
+        taskForm.append('name', this.fileName)
+        taskForm.append('id', this.fileId)
+        taskForm.append('viewJson', JSON.stringify(this.modelData))
+        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
+          console.log(res)
+        })
+      }
+    },
+    selectTree (select) {
+      this.showTree = select
+    },
+    createFile () {
+      console.log(this.fileName)
+      if (this.fileName !== '') {
+        var temp = this.showTree
+        this.showTree = -1
+        var recover = () => {
+          this.showTree = temp
+        }
+        setTimeout(recover, 10)
+        var taskForm = new FormData()
+        taskForm.append('name', this.fileName)
+        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
+          var taskData = res.data.content.data
+          this.fileId = taskData.id
+        })
+      } else {
+        alert('请输入文件名')
+      }
+    },
+    selectFile (e) {
+      console.log(e)
+    },
+    showFileDia (fileJson) {
+      console.log(fileJson, 'hahaha')
+      var fileModel = JSON.parse(fileJson)
+      fileModel = JSON.parse(fileModel)
+      console.dir(fileModel, 'filemode dir')
+      fileModel.nodeDataArray.forEach((item) => {
+        item.size = new this.$go.Size(item.size.width, item.size.height)
+        item.width = 120
+        item.nameAlignment = new this.$go.Spot(item.nameAlignment.x, item.nameAlignment.y)
+        item.textAlignment = new this.$go.Spot(item.textAlignment.x, item.textAlignment.y)
+      })
+      console.log(fileModel.linkDataArray, 'link')
+      console.log(fileModel.nodeDataArray[0].nameAlignment, 'node')
+//      console.log(JSON.parse(fileModel), '2131')
+      this.Diagram.model = new this.$go.GraphLinksModel(fileModel.nodeDataArray, fileModel.linkDataArray)
+      this.modelData = this.Diagram.model
     }
   }
 }
@@ -281,12 +370,6 @@ export default {
   span{
     display: inline-block;
   }
-/*#myDiagramDiv{*/
-  /*display:inline-block;*/
-/*}*/
-/*#myPaletteDiv{*/
-  /*display:inline-block;*/
-/*}*/
 
   #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
@@ -320,10 +403,41 @@ export default {
   }
 
   .info{
-    width:150px;
+    width:180px;
   }
   .ivu-tree-title{
-    font-size: 1rem;
+    font-size: 0.5rem;
+  }
+
+  .auto-layout{
+    background: url('../image/autoLayout.jpg');
+    position:absolute;
+    top: 130px;
+    right:40px;
+    background-size:100% 100%;
+    width: 30px;
+    height: 20px;
+    z-index: 100;
+  }
+
+  .create-save{
+    height:40px;
+    background: rgb(200,200,200);
+    line-height: 40px;
+  }
+
+  .create-save .ivu-menu-item{
+    height:40px;
+    background: rgb(200,200,200);
+    color: black !important;
+  }
+  .create-save .ivu-menu-item-active{
+    background: #e0e0e0 !important;
+    color: #0000ff !important;
+  }
+
+  .create-save .ivu-menu-item:hover{
+    background: #e0e0e0 !important;
   }
 
 

@@ -4,30 +4,24 @@ import Vue from 'vue'
 import App from './App'
 import go from 'gojs'
 import iView from 'iview'
-import taskTree from './components/taskTree'
 import 'iview/dist/styles/iview.css'
-import scriptsTree from './components/scriptsTree'
-import resourceManager from './components/resourceManager'
-import VueRouter from 'vue-router'
 
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+import config from './assets/config'
+
+Vue.use(VueAxios, axios)
+// 全局变量
 Object.defineProperty(Vue.prototype, '$go', {value: go})
+Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
+
 Vue.use(iView)
-Vue.use(VueRouter)
-
+Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
-const routes = [
-  {path: '/taskTree', component: taskTree},
-  {path: '/scriptsTree', component: scriptsTree},
-  {path: '/resourceManger', component: resourceManager}
-]
 
-const router = new VueRouter({
-  routes
-})
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
-  router,
   template: '<App/>',
   components: { App }
 })
