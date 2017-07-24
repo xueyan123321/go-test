@@ -15,40 +15,50 @@
     },
     created () {
       this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {
-        console.log(res.data.content.data)
-        var tasks = res.data.content.data
-        var listTask = []
-        tasks.forEach((item) => {
-          listTask.push({title: `<span class="icon"></span>${item.name}`, id: item.id})
-        })
-        this.baseData[0].children = listTask
-        console.log(this.baseData[0].children)
+        if (res.data.content.errorCode === 200) {
+          var tasks = res.data.content.data
+          var listTask = []
+          tasks.forEach((item) => {
+            listTask.push({title: `<span class="icon"></span>${item.name}`, id: item.id})
+          })
+          this.baseData[0].children = listTask
+          console.log(this.baseData[0].children)
+        } else {
+          alert(res.data.content.errorMsg)
+        }
+      }).catch((e) => {
+        alert(e)
       })
     },
     methods: {
       select (data) {
         console.log(data)
         this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/task/' + data[0].id).then((res) => {
-          console.log(res.data.content.data.viewJson)
-          this.$emit('getFile', res.data.content.data.viewJson)
+          console.log(res.data.content.data)
+          this.$emit('getFile', res.data.content.data.viewJson, res.data.content.data.name, res.data.content.data.id)
         })
       }
     }
   }
 </script>
 
-<style lang="scss"
-       rel="stylesheet/scss">
+<style scoped>
   .info{
     padding:10px !important;
   }
+
+  .ivu-tree-title, ivu-tree-children{
+    display:inline !important;
+  }
+</style>
+
+<style>
   .icon{
     width:15px;
     height:15px;
+    display: inline-block ;
     background: url('../assets/image/p14.png');
     background-size:100% 100%;
-  }
-  .ivu-tree-title, ivu-tree-children{
-    display:inline !important;
+    margin-right:5px;
   }
 </style>

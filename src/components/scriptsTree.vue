@@ -29,8 +29,7 @@
   }
 </script>
 
-<style lang="scss"
-       rel="stylesheet/scss">
+<style scoped>
   .info{
     padding:10px !important;
   }

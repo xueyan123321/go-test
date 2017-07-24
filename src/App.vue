@@ -59,10 +59,16 @@
             <input type="text" v-model="fileName">
           </Modal>
           <Menu-item name="1">
-              新建
+              新建任务
           </Menu-item>
           <Menu-item name="2">
-              保存
+              保存任务
+          </Menu-item>
+          <Menu-item name="3">
+              删除任务
+          </Menu-item>
+          <Menu-item name="4">
+              运行任务
           </Menu-item>
         </Menu>
         <div id="myDiagramDiv" ref="diagram"
@@ -76,13 +82,27 @@
     <p>this is {{GraphObjectModel}}</p>
     <Modal
       v-model="showCustom"
-      title="普通的Modal对话框标题"
+      title="定制图表框属性"
       @on-ok="submitTheProps"
       @on-cancel="cancelCreate"
       >
-      <input type="text" v-model="customProps.name">
-      <p>对话框内容</p>
-      <p>对话框内容</p>
+      <div class="customProps">
+        <span>节点名: </span><input type="text" v-model="customProps.name">
+        <span>索引名: </span><input type="text" v-model="customProps.indexName">
+        <span>查询模板:</span><textarea cols="70" rows="10" v-model="customProps.jsonFile" v-if="update"></textarea>
+        <button style="margin-left:16%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
+        <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
+      </div>
+    </Modal>
+    <Modal
+      v-model="showCustom2"
+      title="定制图表框属性"
+      @on-ok = "submitTheProps"
+      @on-cancel ="cancelCreate"
+    >
+      <div class="customProps">
+        <span>节点名: </span><input type="text" v-model="customProps.name">
+      </div>
     </Modal>
   </div>
 </template>
@@ -100,7 +120,7 @@ export default {
       GraphObjectModel: {},
       modelData: {},
       showCustom: false,
-      customProps: {},
+      customProps: {name: '', jsonFile: ''},
       objData: {},
       Diagram: '',
       theme1: 'dark',
@@ -109,7 +129,11 @@ export default {
       modelShow: false,
       fileName: '',
       showTree: '1',
-      fileId: ''
+      fileId: '',
+      update: true,
+      outputTypeArray: [],
+      param: [],
+      showCustom2: false
     }
   },
   mounted () {
@@ -130,13 +154,46 @@ export default {
         locationObjectName: 'BODY',
         locationSpot: go.Spot.Center,
         selectionObjectName: 'BODY',
+        click: function (e, object) {
+          self.objData = object.data
+        },
         doubleClick: function (e, obj) {
+          console.log(self.fileId, 'aa')
           console.log(obj.data.name)
+          self.axios.get(`http://${self.$mainUrl}/windata-server/web/api/taskNode?taskNodeId=${obj.data.id}&name=${obj.data.name}`).then((res) => {
+            if (res.data.content.errorCode === 200) {
+              try {
+                self.customProps.name = res.data.content.data.name
+              } catch (e) {
+                self.customProps.name = ''
+              }
+              try {
+                var param = JSON.parse(res.data.content.data.paramJson)
+              } catch (e) {
+                param = {}
+              }
+              console.log(param)
+              self.customProps.indexName = param.indexName
+              self.customProps.jsonFile = param.searchTemplate
+              var i = 0
+              for (var key in param.searchParams) {
+                self.param[i] = param.searchParams[key]
+                i++
+              }
+              if (obj.data.type === 1000 || obj.data.type === 1001) {
+                self.showCustom = true
+              } else {
+                self.showCustom2 = true
+              }
+              console.log(self.param, 'param')
+            } else {
+              alert(res.data.content.errorMsg)
+            }
+          }).catch((e) => {
+            alert(e)
+          })
           // 浅拷贝出对象数据
           self.objData = obj.data
-          console.log(self.showCustom)
-          self.customProps.name = obj.data.name
-          self.showCustom = true
         }
       },
       // the body
@@ -226,10 +283,10 @@ export default {
       contentAlignment: new go.Spot(0.4, 0.5),
       nodeTemplateMap: myDiagram.nodeTemplateMap,
       model: new go.GraphLinksModel([
-        {text: '机器学习', name: '', status: 0},
-        {text: 'step', name: '', status: 0},
-        {text: '数据库', name: '', status: 0},
-        {text: '???', name: '', status: 0}
+        {text: '源数据查询', name: '', id: '', status: 0, type: 1000},
+        {text: '聚合查询', name: '', id: '', status: 0, type: 1001},
+        {text: '数据导出', name: '', id: '', status: 0, type: 9000},
+        {text: '消息通知', name: '', id: '', status: 0, type: 8000}
       ])
     })
     myDiagram.linkTemplate =
@@ -252,10 +309,20 @@ export default {
     //  get the model data
     var tool = myDiagram.toolManager.draggingTool
     tool.doDropOnto = function (e, obj) {
-      self.objData = myDiagram.model.nodeDataArray[nodeDataArray.length - 1]
+      self.objData = myDiagram.model.nodeDataArray[myDiagram.model.nodeDataArray.length - 1]
+      console.log(self.objData, 'sasa')
       self.customProps.name = self.objData.name
       if (self.objData.status === 0) {
-        self.showCustom = true
+          //  初始化节点编辑框
+        if (self.objData.type === 1000 || self.objData.type === 1001) {
+          self.showCustom = true
+          self.customProps.jsonFile = ''
+          self.outputTypeArray = []
+          self.param = []
+        } else {
+          console.log(self.objData.type)
+          self.showCustom2 = true
+        }
 //        拖动放入改变节点风格
         myDiagram.model.setDataProperty(self.objData, 'itemArrayTop', [{'portColor': '#ff0000', 'portId': 'top'}])
         myDiagram.model.setDataProperty(self.objData, 'itemArrayBottom', [{'portColor': '#ff0000', 'portId': 'bottom'}])
@@ -266,6 +333,22 @@ export default {
         myDiagram.model.setDataProperty(self.objData, 'width', 120)
         myDiagram.model.setDataProperty(self.objData, 'fill', '#ffffff')
       }
+    }
+    myDiagram.commandHandler.deleteSelection = function (obj) {
+      go.CommandHandler.prototype.deleteSelection.call(myDiagram.commandHandler)
+      console.log(self.objData)
+      var delNodeForm = new FormData()
+      delNodeForm.append('taskId', self.fileId)
+      delNodeForm.append('taskNodeId', self.objData.id)
+      self.axios.post('http://' + self.$mainUrl + '/windata-server/web/api/taskNodes/del', delNodeForm).then((res) => {
+        if (res.data.content.errorCode === 200) {
+          console.log(res)
+        } else {
+          alert(res.data.content.errorMsg)
+        }
+      }).catch((error) => {
+        alert(error)
+      })
     }
     this.modelData = myDiagram.model
     this.Diagram = myDiagram
@@ -281,11 +364,53 @@ export default {
       this.GraphObjectModel = this.modelData.toJSON()
     },
     submitTheProps () {
-      this.showCustom = false
-      var newtext = this.customProps.name
-      console.log(newtext)
-      this.Diagram.model.setDataProperty(this.objData, 'name', newtext)
-      this.objData.status = 1
+      var flag = 0 // flag为1时，判断不符合要求的提交
+      if (this.objData.type === '1000' || this.objData.type === '10001') {
+        if (this.customProps.name === '' || this.customProps.jsonFile === '' || this.param.indexOf('') !== -1 || this.param === []) {
+          flag = 1
+        }
+      } else {
+        if (this.customProps.name === '') {
+          flag = 1
+        }
+      }
+      if (flag === 1) {
+        alert('请填写所有字段，提交失败')
+        this.objData.status = 1
+      } else {
+        var newtext = this.customProps.name
+        console.log(newtext)
+        console.log(this.fileId)
+        this.Diagram.model.setDataProperty(this.objData, 'name', newtext)
+        this.objData.status = 1
+//        构建nodeForm的data数据上传节点数据
+        var nodeForm = new FormData()
+        nodeForm.append('name', newtext)
+        nodeForm.append('taskId', this.fileId)
+        nodeForm.append('viewType', this.objData.type)
+        nodeForm.append('id', this.objData.id)
+        console.log(this.objData.id, 'hehe')
+        var nodeParam = {}
+        nodeParam.indexName = this.customProps.indexName
+        nodeParam.searchTemplate = this.customProps.jsonFile
+        nodeParam.searchParams = {}
+        this.outputTypeArray.forEach((item, index) => {
+          nodeParam.searchParams[item] = this.param[index]
+        })
+        nodeParam = JSON.stringify(nodeParam)
+        nodeForm.append('paramJson', nodeParam)
+        //  上传节点
+        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/taskNodes', nodeForm).then((res) => {
+          if (res.data.content.errorCode === 200) {
+            this.objData.id = res.data.content.data.id
+          } else {
+            alert(res.data.content.errorMsg)
+          }
+          console.log(this.objData.id, 'hehe1')
+        }).catch((res) => {
+          alert(res)
+        })
+      }
     },
     setLayout () {
       let digraphLayout = new this.$go.LayeredDigraphLayout()
@@ -305,14 +430,53 @@ export default {
     createSaveSelect (e) {
       if (e === '1') {
         this.modelShow = true
-      } else {
+      } else if (e === '2') {
         console.log(this.fileName)
         var taskForm = new FormData()
         taskForm.append('name', this.fileName)
         taskForm.append('id', this.fileId)
+        console.log(this.modelData, 'before stringfy')
         taskForm.append('viewJson', JSON.stringify(this.modelData))
+        console.log(this.modelData, 'after stringfy')
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
-          console.log(res)
+          if (res.data.content.errorCode === 200) {
+            console.log(res)
+          } else {
+            alert(res.data.content.errorMsg)
+          }
+        }).catch((error) => {
+          alert(error)
+        })
+      } else if (e === '3') {
+        var temp = this.showTree
+        this.showTree = -1
+        var recover = () => {
+          this.showTree = temp
+        }
+        setTimeout(recover, 10)
+        var delTask = new FormData()
+        delTask.append('name', this.fileName)
+        delTask.append('id', this.fileId)
+        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks/del', delTask).then((res) => {
+          if (res.data.content.errorCode === 200) {
+            console.log(res)
+          } else {
+            alert(res.data.content.errorMsg)
+          }
+        }).catch((error) => {
+          alert(error)
+        })
+      } else {
+        var runTask = new FormData()
+        runTask.append('id', this.fileId)
+        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/task/run', runTask).then((res) => {
+          if (res.data.content.errorCode === 200) {
+            console.log(res)
+          } else {
+            alert(res.data.content.errorMsg)
+          }
+        }).catch((error) => {
+          alert(error)
         })
       }
     },
@@ -331,38 +495,75 @@ export default {
         var taskForm = new FormData()
         taskForm.append('name', this.fileName)
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
-          var taskData = res.data.content.data
-          this.fileId = taskData.id
+          if (res.data.content.errorCode === 200) {
+            var taskData = res.data.content.data
+            this.fileId = taskData.id
+          } else {
+            alert(res.data.content.errorMsg)
+          }
+        }).catch((error) => {
+          alert(error)
         })
       } else {
         alert('请输入文件名')
       }
     },
-    selectFile (e) {
-      console.log(e)
-    },
-    showFileDia (fileJson) {
-      console.log(fileJson, 'hahaha')
+    showFileDia (fileJson, name, id) {
+      console.log(fileJson, 'fileJson')
+      console.log(name, 'name')
+      console.log(id, 'id')
+      this.fileName = name
+      this.fileId = id
+      console.log(fileJson, 'fileJson')
       var fileModel = JSON.parse(fileJson)
       fileModel = JSON.parse(fileModel)
-      console.dir(fileModel, 'filemode dir')
-      fileModel.nodeDataArray.forEach((item) => {
-        item.size = new this.$go.Size(item.size.width, item.size.height)
-        item.width = 120
-        item.nameAlignment = new this.$go.Spot(item.nameAlignment.x, item.nameAlignment.y)
-        item.textAlignment = new this.$go.Spot(item.textAlignment.x, item.textAlignment.y)
+      console.log(fileModel, 'hahaha')
+      try {
+        fileModel.nodeDataArray.forEach((item) => {
+          item.size = new this.$go.Size(item.size.width, item.size.height)
+          item.width = 120
+          item.nameAlignment = new this.$go.Spot(item.nameAlignment.x, item.nameAlignment.y)
+          item.textAlignment = new this.$go.Spot(item.textAlignment.x, item.textAlignment.y)
+        })
+      } catch (e) {
+        fileModel = {}
+        fileModel.nodeDataArray = []
+        fileModel.linkDataArray = []
+      }
+//      console.log(fileModel.linkDataArray, 'link')
+//      console.log(fileModel.nodeDataArray[0].nameAlignment, 'node')
+      this.Diagram.model.nodeDataArray = fileModel.nodeDataArray
+      this.Diagram.model.linkDataArray = fileModel.linkDataArray
+//      this.modelData = this.Diagram.model
+    },
+    format () {
+      console.log(this.customProps.jsonFile)
+      try {
+        var customProps = JSON.parse(this.customProps.jsonFile)
+      } catch (e) {
+        alert('请输入正确的json格式文件')
+      }
+      this.update = false
+      var recover = () => {
+        this.update = true
+      }
+      setTimeout(recover, 10)
+      this.customProps.jsonFile = JSON.stringify(customProps, null, '\t')
+      var regEx = new RegExp(/\{\{(.*?)\}\}/g)
+      var outputArray = this.customProps.jsonFile.match(regEx)
+      outputArray = outputArray.map(function (item) {
+        item = item.replace(/\{/g, '')
+        item = item.replace(/\}/g, '')
+        return item
       })
-      console.log(fileModel.linkDataArray, 'link')
-      console.log(fileModel.nodeDataArray[0].nameAlignment, 'node')
-//      console.log(JSON.parse(fileModel), '2131')
-      this.Diagram.model = new this.$go.GraphLinksModel(fileModel.nodeDataArray, fileModel.linkDataArray)
-      this.modelData = this.Diagram.model
+      console.log(outputArray)
+      this.outputTypeArray = outputArray
     }
   }
 }
 </script>
 
-<style lang="scss">
+<style scoped>
   a{
     color:#000000
   }
@@ -382,15 +583,17 @@ export default {
     height:80px;
     line-height: 80px;
   }
-  .logo{
-    height:80px;
-    span {
+  .logo {
+    height: 80px;
+  }
+
+  .logo  span {
       width:80px;
       height: 80px;
       background: url('./assets/image/Windata.png');
       background-size:100% 100%;
-    }
   }
+
   .right-content{
     margin-left:900px !important;
   }
@@ -421,14 +624,14 @@ export default {
   }
 
   .create-save{
-    height:40px;
-    background: rgb(200,200,200);
-    line-height: 40px;
-  }
+       height:40px;
+       background: rgb(200,200,200);
+       line-height: 40px;
+     }
 
   .create-save .ivu-menu-item{
     height:40px;
-    background: rgb(200,200,200);
+    background: rgb(200,200,200) !important;
     color: black !important;
   }
   .create-save .ivu-menu-item-active{
@@ -440,5 +643,28 @@ export default {
     background: #e0e0e0 !important;
   }
 
+  .customProps{
+    display:flex;
+    flex-wrap:wrap
+  }
 
+  .customProps span{
+    width: 15%;
+    margin-top:2%;
+    margin-right: 10px;
+  }
+
+  .customProps input{
+    width: 40%;
+    margin-top:2%;
+    margin-right: 40%;
+  }
+
+  .customProps textarea{
+    margin-top:2%;
+  }
+
+  .date-type{
+    width:100%
+  }
 </style>
