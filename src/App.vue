@@ -43,7 +43,11 @@
         <Menu-item name="2" class="left-nav">脚本开发</Menu-item>
       </Menu>
 
-      <taskTree v-if="showTree === '1'" v-on:getFile="showFileDia"></taskTree>
+      <taskTree v-if="showTree === '1'"
+                @getFile="showFileDia"
+                @sentResponse="cover=true"
+                @receiveResponse="cover=false"
+                @responseError="cover=false"></taskTree>
       <scriptsTree v-else></scriptsTree>
 
       <div style="width:240px; height:110px; top: 130px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
@@ -72,7 +76,7 @@
           </Menu-item>
         </Menu>
         <div id="myDiagramDiv" ref="diagram"
-             style="width:1650px; height:100vh; background-color: #ffffff; border: solid 1px black">
+             style="width:1650px; height:80vh; background-color: #ffffff; border: solid 1px black">
         </div>
       </span>
     </div>
@@ -94,6 +98,9 @@
         <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
       </div>
     </Modal>
+    <Modal v-model="weatherSave">
+
+    </Modal>
     <Modal
       v-model="showCustom2"
       title="定制图表框属性"
@@ -104,6 +111,28 @@
         <span>节点名: </span><input type="text" v-model="customProps.name">
       </div>
     </Modal>
+    <div class="cover" v-if="cover">
+      <div class="spinner">
+        <div class="spinner-container container1">
+          <div class="circle1"></div>
+          <div class="circle2"></div>
+          <div class="circle3"></div>
+          <div class="circle4"></div>
+        </div>
+        <div class="spinner-container container2">
+          <div class="circle1"></div>
+          <div class="circle2"></div>
+          <div class="circle3"></div>
+          <div class="circle4"></div>
+        </div>
+        <div class="spinner-container container3">
+          <div class="circle1"></div>
+          <div class="circle2"></div>
+          <div class="circle3"></div>
+          <div class="circle4"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -133,7 +162,10 @@ export default {
       update: true,
       outputTypeArray: [],
       param: [],
-      showCustom2: false
+      showCustom2: false,
+      cover: false,
+      diaChanged: false,
+      weatherSave: false
     }
   },
   mounted () {
@@ -141,6 +173,19 @@ export default {
     var self = this
     console.log(this.$refs.diagram.id)
     var $ = go.GraphObject.make
+    this.axios.interceptors.request.use(function (config) {
+      self.cover = true
+      return config
+    }, function (error) {
+      return Promise.reject(error)
+    })
+    this.axios.interceptors.response.use(function (response) {
+      self.cover = false
+      return response
+    }, function (error) {
+      self.cover = false
+      return Promise.reject(error)
+    })
     var myDiagram =
       $(go.Diagram, this.$refs.diagram.id,
         {
@@ -156,10 +201,12 @@ export default {
         selectionObjectName: 'BODY',
         click: function (e, object) {
           self.objData = object.data
+          console.log(self.objData)
         },
         doubleClick: function (e, obj) {
           console.log(self.fileId, 'aa')
           console.log(obj.data.name)
+          self.outputTypeArray = []
           self.axios.get(`http://${self.$mainUrl}/windata-server/web/api/taskNode?taskNodeId=${obj.data.id}&name=${obj.data.name}`).then((res) => {
             if (res.data.content.errorCode === 200) {
               try {
@@ -172,11 +219,12 @@ export default {
               } catch (e) {
                 param = {}
               }
-              console.log(param)
+              console.log(param, 'param')
               self.customProps.indexName = param.indexName
               self.customProps.jsonFile = param.searchTemplate
               var i = 0
               for (var key in param.searchParams) {
+                self.outputTypeArray.push(key)
                 self.param[i] = param.searchParams[key]
                 i++
               }
@@ -185,7 +233,7 @@ export default {
               } else {
                 self.showCustom2 = true
               }
-              console.log(self.param, 'param')
+              console.log(res.data.content.data.paramJson, 'paramJson')
             } else {
               alert(res.data.content.errorMsg)
             }
@@ -340,15 +388,18 @@ export default {
       var delNodeForm = new FormData()
       delNodeForm.append('taskId', self.fileId)
       delNodeForm.append('taskNodeId', self.objData.id)
-      self.axios.post('http://' + self.$mainUrl + '/windata-server/web/api/taskNodes/del', delNodeForm).then((res) => {
-        if (res.data.content.errorCode === 200) {
-          console.log(res)
-        } else {
-          alert(res.data.content.errorMsg)
-        }
-      }).catch((error) => {
-        alert(error)
-      })
+      if (self.objData.status !== 0) {
+        self.axios.post('http://' + self.$mainUrl + '/windata-server/web/api/taskNodes/del', delNodeForm).then((res) => {
+          if (res.data.content.errorCode === 200) {
+            console.log(res)
+          } else {
+            alert('删除:' + res.data.content.errorMsg)
+          }
+        }).catch((error) => {
+          alert(error)
+        })
+        self.createSaveSelect('2')
+      }
     }
     this.modelData = myDiagram.model
     this.Diagram = myDiagram
@@ -365,7 +416,7 @@ export default {
     },
     submitTheProps () {
       var flag = 0 // flag为1时，判断不符合要求的提交
-      if (this.objData.type === '1000' || this.objData.type === '10001') {
+      if (this.objData.type === 1000 || this.objData.type === 1001) {
         if (this.customProps.name === '' || this.customProps.jsonFile === '' || this.param.indexOf('') !== -1 || this.param === []) {
           flag = 1
         }
@@ -376,7 +427,9 @@ export default {
       }
       if (flag === 1) {
         alert('请填写所有字段，提交失败')
-        this.objData.status = 1
+        if (this.objData.status === 0) {
+          this.Diagram.commandHandler.deleteSelection()
+        }
       } else {
         var newtext = this.customProps.name
         console.log(newtext)
@@ -403,6 +456,7 @@ export default {
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/taskNodes', nodeForm).then((res) => {
           if (res.data.content.errorCode === 200) {
             this.objData.id = res.data.content.data.id
+            this.createSaveSelect('2')
           } else {
             alert(res.data.content.errorMsg)
           }
@@ -447,6 +501,8 @@ export default {
         }).catch((error) => {
           alert(error)
         })
+//        保存成功表格变化位置为假
+        this.diaChanged = false
       } else if (e === '3') {
         var temp = this.showTree
         this.showTree = -1
@@ -508,7 +564,18 @@ export default {
         alert('请输入文件名')
       }
     },
+    changeListener () {
+        //   文件改变，表格变化位为真
+      this.diaChanged = true
+      console.log(this.diaChanged)
+    },
     showFileDia (fileJson, name, id) {
+      if (this.diaChanged === true) {
+        this.weatherSave = true
+      }
+//        表格变化位置位为假
+      this.diaChanged = false
+      this.Diagram.model.removeChangedListener(this.changeListener)
       console.log(fileJson, 'fileJson')
       console.log(name, 'name')
       console.log(id, 'id')
@@ -534,7 +601,12 @@ export default {
 //      console.log(fileModel.nodeDataArray[0].nameAlignment, 'node')
       this.Diagram.model.nodeDataArray = fileModel.nodeDataArray
       this.Diagram.model.linkDataArray = fileModel.linkDataArray
+//      this.Diagram.layout = new this.$go.LayeredDigraphLayout()
 //      this.modelData = this.Diagram.model
+      var addChangelisten = () => {
+        this.Diagram.model.addChangedListener(this.changeListener)
+      }
+      setTimeout(addChangelisten, 100)
     },
     format () {
       console.log(this.customProps.jsonFile)
@@ -616,7 +688,7 @@ export default {
     background: url('../image/autoLayout.jpg');
     position:absolute;
     top: 130px;
-    right:40px;
+    right:50px;
     background-size:100% 100%;
     width: 30px;
     height: 20px;
@@ -668,3 +740,131 @@ export default {
     width:100%
   }
 </style>
+
+<style>
+  .spinner {
+    margin: 100px auto;
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top:250px;
+    left:1000px;
+    z-index:4;
+  }
+
+  .container1 > div, .container2 > div, .container3 > div {
+    width: 6px;
+    height: 6px;
+    background-color: #00ffff;
+
+    border-radius: 100%;
+    position: absolute;
+    -webkit-animation: bouncedelay 1.2s infinite ease-in-out;
+    animation: bouncedelay 1.2s infinite ease-in-out;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+  }
+
+  .spinner .spinner-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .container2 {
+    -webkit-transform: rotateZ(45deg);
+    transform: rotateZ(45deg);
+  }
+
+  .container3 {
+    -webkit-transform: rotateZ(90deg);
+    transform: rotateZ(90deg);
+  }
+
+  .circle1 { top: 0; left: 0; }
+  .circle2 { top: 0; right: 0; }
+  .circle3 { right: 0; bottom: 0; }
+  .circle4 { left: 0; bottom: 0; }
+
+  .container2 .circle1 {
+    -webkit-animation-delay: -1.1s;
+    animation-delay: -1.1s;
+  }
+
+  .container3 .circle1 {
+    -webkit-animation-delay: -1.0s;
+    animation-delay: -1.0s;
+  }
+
+  .container1 .circle2 {
+    -webkit-animation-delay: -0.9s;
+    animation-delay: -0.9s;
+  }
+
+  .container2 .circle2 {
+    -webkit-animation-delay: -0.8s;
+    animation-delay: -0.8s;
+  }
+
+  .container3 .circle2 {
+    -webkit-animation-delay: -0.7s;
+    animation-delay: -0.7s;
+  }
+
+  .container1 .circle3 {
+    -webkit-animation-delay: -0.6s;
+    animation-delay: -0.6s;
+  }
+
+  .container2 .circle3 {
+    -webkit-animation-delay: -0.5s;
+    animation-delay: -0.5s;
+  }
+
+  .container3 .circle3 {
+    -webkit-animation-delay: -0.4s;
+    animation-delay: -0.4s;
+  }
+
+  .container1 .circle4 {
+    -webkit-animation-delay: -0.3s;
+    animation-delay: -0.3s;
+  }
+
+  .container2 .circle4 {
+    -webkit-animation-delay: -0.2s;
+    animation-delay: -0.2s;
+  }
+
+  .container3 .circle4 {
+    -webkit-animation-delay: -0.1s;
+    animation-delay: -0.1s;
+  }
+
+  @-webkit-keyframes bouncedelay {
+    0%, 80%, 100% { -webkit-transform: scale(0.0) }
+    40% { -webkit-transform: scale(1.0) }
+  }
+
+  @keyframes bouncedelay {
+    0%, 80%, 100% {
+      transform: scale(0.0);
+      -webkit-transform: scale(0.0);
+    } 40% {
+        transform: scale(1.0);
+        -webkit-transform: scale(1.0);
+      }
+  }
+
+  .cover{
+    position:absolute;
+    bottom:0px;
+    top:0px;
+    left:0px;
+    right:0px;
+    background:#000;
+    opacity:0.7;
+    z-index:100;
+  }
+</style>
+

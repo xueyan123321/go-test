@@ -14,6 +14,20 @@
       }
     },
     created () {
+      var self = this
+      this.axios.interceptors.request.use(function (config) {
+        self.$emit('sentRequest')
+        return config
+      }, function (error) {
+        return Promise.reject(error)
+      })
+      this.axios.interceptors.response.use(function (response) {
+        self.$emit('receiveResponse')
+        return response
+      }, function (error) {
+        self.$emit('responseError')
+        return Promise.reject(error)
+      })
       this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {
         if (res.data.content.errorCode === 200) {
           var tasks = res.data.content.data
@@ -33,10 +47,14 @@
     methods: {
       select (data) {
         console.log(data)
-        this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/task/' + data[0].id).then((res) => {
-          console.log(res.data.content.data)
-          this.$emit('getFile', res.data.content.data.viewJson, res.data.content.data.name, res.data.content.data.id)
-        })
+        if (data[0].id !== undefined) {
+          this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/task/' + data[0].id).then((res) => {
+            console.log(res.data.content.data)
+            this.$emit('getFile', res.data.content.data.viewJson, res.data.content.data.name, res.data.content.data.id)
+          }).catch((error) => {
+            alert(error)
+          })
+        }
       }
     }
   }
