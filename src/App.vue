@@ -60,7 +60,7 @@
       <span>
         <Menu mode="horizontal" :theme="theme3" active-name="1" @on-select="createSaveSelect" class="create-save">
           <Modal v-model="modelShow" title="请输入文件名称" @on-ok="createFile">
-            <input type="text" v-model="fileName">
+            <input type="text" v-model="newFileName">
           </Modal>
           <Menu-item name="1">
               新建任务
@@ -98,8 +98,11 @@
         <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
       </div>
     </Modal>
-    <Modal v-model="weatherSave">
-
+    <Modal
+      v-model="weatherSave"
+      @on-ok="saveLastFile"
+    >
+      <div>是否保存上一次图表数据</div>
     </Modal>
     <Modal
       v-model="showCustom2"
@@ -146,6 +149,7 @@ export default {
   name: 'app',
   data () {
     return {
+      newFileName: '',
       GraphObjectModel: {},
       modelData: {},
       showCustom: false,
@@ -165,7 +169,10 @@ export default {
       showCustom2: false,
       cover: false,
       diaChanged: false,
-      weatherSave: false
+      weatherSave: false,
+      lastFileName: '',
+      lastFileId: '',
+      lastModelData: {}
     }
   },
   mounted () {
@@ -481,28 +488,31 @@ export default {
         this.Diagram.commandHandler.deleteSelection()
       }
     },
+    saveFile (fileName, fileId, modelData) {
+      var taskForm = new FormData()
+      taskForm.append('name', fileName)
+      taskForm.append('id', fileId)
+      console.log(this.modelData, 'before stringfy')
+      taskForm.append('viewJson', JSON.stringify(modelData))
+      console.log(this.modelData, 'after stringfy')
+      this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
+        if (res.data.content.errorCode === 200) {
+          console.log(res)
+        } else {
+          alert(res.data.content.errorMsg)
+        }
+      }).catch((error) => {
+        alert(error)
+      })
+//        保存成功表格变化位置为假
+      this.diaChanged = false
+    },
     createSaveSelect (e) {
       if (e === '1') {
         this.modelShow = true
       } else if (e === '2') {
         console.log(this.fileName)
-        var taskForm = new FormData()
-        taskForm.append('name', this.fileName)
-        taskForm.append('id', this.fileId)
-        console.log(this.modelData, 'before stringfy')
-        taskForm.append('viewJson', JSON.stringify(this.modelData))
-        console.log(this.modelData, 'after stringfy')
-        this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
-          if (res.data.content.errorCode === 200) {
-            console.log(res)
-          } else {
-            alert(res.data.content.errorMsg)
-          }
-        }).catch((error) => {
-          alert(error)
-        })
-//        保存成功表格变化位置为假
-        this.diaChanged = false
+        this.saveFile(this.fileName, this.fileId, this.modelData)
       } else if (e === '3') {
         var temp = this.showTree
         this.showTree = -1
@@ -523,6 +533,7 @@ export default {
           alert(error)
         })
       } else {
+        this.saveFile(this.fileName, this.fileId, this.modelData)
         var runTask = new FormData()
         runTask.append('id', this.fileId)
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/task/run', runTask).then((res) => {
@@ -540,16 +551,18 @@ export default {
       this.showTree = select
     },
     createFile () {
-      console.log(this.fileName)
-      if (this.fileName !== '') {
+      console.log(this.newFileName)
+      // 刷新任务列表
+      if (this.newFileName !== '') {
         var temp = this.showTree
         this.showTree = -1
         var recover = () => {
           this.showTree = temp
         }
         setTimeout(recover, 10)
+        //
         var taskForm = new FormData()
-        taskForm.append('name', this.fileName)
+        taskForm.append('name', this.newFileName)
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
           if (res.data.content.errorCode === 200) {
             var taskData = res.data.content.data
@@ -560,9 +573,13 @@ export default {
         }).catch((error) => {
           alert(error)
         })
+        this.newFileName = ''
       } else {
         alert('请输入文件名')
       }
+    },
+    saveLastFile () {
+      this.saveFile(this.lastFileName, this.lastFileId, this.lastModelData)
     },
     changeListener () {
         //   文件改变，表格变化位为真
@@ -579,6 +596,16 @@ export default {
       console.log(fileJson, 'fileJson')
       console.log(name, 'name')
       console.log(id, 'id')
+      // 保存上次数据以便询问是否保存上次数据
+      this.lastFileName = this.fileName
+      this.lastFileId = this.fileId
+      console.log(this.lastFileName, 'lastFileName')
+      console.log(this.lastFileId, 'lastFileId')
+
+      for (var key in this.modelData) {
+        this.lastModelData[key] = this.modelData[key]
+      }
+      // 更换现name和id
       this.fileName = name
       this.fileId = id
       console.log(fileJson, 'fileJson')
