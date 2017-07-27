@@ -102,7 +102,7 @@
       v-model="weatherSave"
       @on-ok="saveLastFile"
     >
-      <div>是否保存上一次图表数据</div>
+      <div style="text-align: center;font-size: 1rem">是否保存上一次图表数据?</div>
     </Modal>
     <Modal
       v-model="showCustom2"

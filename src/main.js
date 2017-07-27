@@ -18,10 +18,13 @@ Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
 Vue.use(iView)
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
-
+window.onbeforeunload = function () {
+  return '请您确保保存修改的文档'
+}
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   template: '<App/>',
   components: { App }
 })
+
