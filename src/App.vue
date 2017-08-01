@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <Menu mode="horizontal" :theme="theme1" active-name="1">
+    <Menu mode="horizontal" :theme="theme1" active-name="1" class="menu-horizontal">
       <Menu-item class="logo" name="-1">
         <span></span>
       </Menu-item>
@@ -50,11 +50,11 @@
                 @responseError="cover=false"></taskTree>
       <scriptsTree v-else></scriptsTree>
 
-      <div style="width:240px; height:110px; top: 130px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
-        <span style="display:inline-block; position:relative; text-align: center; top: 90px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
+      <div style="width:240px; height:140px; top: 100px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
+        <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
       </div>
       <span>
-        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:174px;left: 240px;z-index: 98">
+        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:164px;left: 240px;z-index: 98">
         </div>
       </span>
       <span>
@@ -63,15 +63,19 @@
             <input type="text" v-model="newFileName">
           </Modal>
           <Menu-item name="1">
+            <span class="create-task"></span>
               新建任务
           </Menu-item>
           <Menu-item name="2">
+            <span class="save-task"></span>
               保存任务
           </Menu-item>
           <Menu-item name="3">
+            <span class="delete-task"></span>
               删除任务
           </Menu-item>
           <Menu-item name="4">
+            <span class="run-task"></span>
               运行任务
           </Menu-item>
         </Menu>
@@ -93,9 +97,28 @@
       <div class="customProps">
         <span>节点名: </span><input type="text" v-model="customProps.name">
         <span>索引名: </span><input type="text" v-model="customProps.indexName">
-        <span>查询模板:</span><textarea cols="70" rows="10" v-model="customProps.jsonFile" v-if="update"></textarea>
-        <button style="margin-left:16%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
-        <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
+        <strong class="title">查询命令</strong>
+        <div class="query-part">
+          <span class="title-template">查询模板:</span><textarea cols="70" rows="10" v-model="customProps.jsonFile" v-if="update"></textarea>
+          <button style="margin-left:0%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
+          <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
+        </div>
+        <strong class="title">查询字段</strong>
+        <div class="query-item">
+          <input type="text" v-model="queryItem" id="queryItem" @keydown="keyAddItem"><button @click="addItem">添加字段</button>
+          <div class="first-drop-area"
+               @dragover="preventAction"
+               @drop="changeOrder"
+          >0<span style="color:red;visibility: hidden;">haha</span></div>
+          <div v-for="(item,index) in items" class="segment"><div class="middle-area"
+                                                                  @dragover="preventAction"
+                                                                  @drop="changeOrder"><span style="color:red; visibility: hidden;">haha</span>{{index}}</div><li draggable="true" @dragstart="drag" :id="index">{{item}} <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li><div  class="middle-area"
+                  @dragover="preventAction"
+                  @drop="changeOrder">{{index+1}}<span style="color:red;visibility: hidden;">haha</span></div>
+          </div><div class="last-drop-area"
+                     @dragover="preventAction"
+                     @drop="changeOrder">{{items.length}}<span style="color:red;visibility: hidden;">haha</span></div>
+        </div>
       </div>
     </Modal>
     <Modal
@@ -172,7 +195,9 @@ export default {
       weatherSave: false,
       lastFileName: '',
       lastFileId: '',
-      lastModelData: {}
+      lastModelData: {},
+      queryItem: '',
+      items: []
     }
   },
   mounted () {
@@ -198,7 +223,8 @@ export default {
         {
           allowDrop: true,
           initialContentAlignment: go.Spot.Center, // center Diagram contents
-          'undoManager.isEnabled': true // enable Ctrl-Z to undo and Ctrl-Y to redo
+          'undoManager.isEnabled': true, // enable Ctrl-Z to undo and Ctrl-Y to redo
+          'panningTool.isEnabled': false
         })
     //  define a simple Node template
     myDiagram.nodeTemplate = $(go.Node, 'Table',
@@ -229,6 +255,12 @@ export default {
               console.log(param, 'param')
               self.customProps.indexName = param.indexName
               self.customProps.jsonFile = param.searchTemplate
+              self.queryItem = ''
+              if (param.specifyColumns !== undefined) {
+                self.items = param.specifyColumns
+              } else {
+                self.items = []
+              }
               var i = 0
               for (var key in param.searchParams) {
                 self.outputTypeArray.push(key)
@@ -251,6 +283,7 @@ export default {
           self.objData = obj.data
         }
       },
+      new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
       // the body
       $(go.Panel, go.Panel.Spot, {
         row: 2,
@@ -259,13 +292,14 @@ export default {
         stretch: go.GraphObject.fill
       },
         $(go.Shape, 'Rectangle',
-          { fill: '#DFF0FE',
-            stroke: 'blue',
-            strokeWidth: 2,
+          { fill: 'rgb(223,240,254)',
+            stroke: '#0099cc',
+            strokeWidth: 0.6,
             desiredSize: new go.Size(70, 32)},
 //          绑定设置形状属性
             new go.Binding('desiredSize', 'size'),
-            new go.Binding('fill')),
+            new go.Binding('fill'),
+            new go.Binding('stroke')),
         $(go.TextBlock,
           {margin: 5, stroke: 'black', font: '8px sans-serif', wrap: go.TextBlock.None, alignment: new go.Spot(0.5, 0.5)},
 //          类型绑定设置属性
@@ -273,7 +307,7 @@ export default {
           new go.Binding('text'),
           new go.Binding('alignment', 'textAlignment')),
         $(go.TextBlock,
-          {margin: 5, stroke: 'black', font: 'normal small-caps bolder 14px cursive', wrap: go.TextBlock.None, overflow: go.TextBlock.OverflowEllipsis, width: 50, alignment: new go.Spot(0.5, 0.5), textAlign: 'center'},
+          {margin: 5, stroke: 'black', font: 'normal normal bolder 14px serif', wrap: go.TextBlock.None, overflow: go.TextBlock.OverflowEllipsis, width: 50, alignment: new go.Spot(0.5, 0.5), textAlign: 'center'},
 //          绑定设置名字属性
           new go.Binding('text', 'name'),
           new go.Binding('width'),
@@ -338,10 +372,10 @@ export default {
       contentAlignment: new go.Spot(0.4, 0.5),
       nodeTemplateMap: myDiagram.nodeTemplateMap,
       model: new go.GraphLinksModel([
-        {text: '源数据查询', name: '', id: '', status: 0, type: 1000},
-        {text: '聚合查询', name: '', id: '', status: 0, type: 1001},
-        {text: '数据导出', name: '', id: '', status: 0, type: 9000},
-        {text: '消息通知', name: '', id: '', status: 0, type: 8000}
+        {text: '源数据查询', name: '', id: '', status: 0, type: 1000, loc: ''},
+        {text: '聚合查询', name: '', id: '', status: 0, type: 1001, loc: ''},
+        {text: '数据导出', name: '', id: '', status: 0, type: 9000, loc: ''},
+        {text: '消息通知', name: '', id: '', status: 0, type: 8000, loc: ''}
       ])
     })
     myDiagram.linkTemplate =
@@ -353,7 +387,7 @@ export default {
         relinkableTo: true
       },
       new go.Binding('points').makeTwoWay(),
-      $(go.Shape, { stroke: '#2f4f4f', strokeWidth: 2 }),
+      $(go.Shape, { stroke: '#0099cc', strokeWidth: 2 }),
       $(go.Shape, {toArrow: 'Standard'}))
     var nodeDataArray = []
     var linkDataArray = []
@@ -371,9 +405,12 @@ export default {
           //  初始化节点编辑框
         if (self.objData.type === 1000 || self.objData.type === 1001) {
           self.showCustom = true
+          self.customProps.indexName = ''
           self.customProps.jsonFile = ''
           self.outputTypeArray = []
           self.param = []
+          self.queryItem = ''
+          self.items = []
         } else {
           console.log(self.objData.type)
           self.showCustom2 = true
@@ -387,6 +424,7 @@ export default {
         myDiagram.model.setDataProperty(self.objData, 'font', '6px sans-serif')
         myDiagram.model.setDataProperty(self.objData, 'width', 120)
         myDiagram.model.setDataProperty(self.objData, 'fill', '#ffffff')
+        myDiagram.model.setDataProperty(self.objData, 'stroke', 'rgb(0,153,204)')
       }
     }
     myDiagram.commandHandler.deleteSelection = function (obj) {
@@ -457,6 +495,11 @@ export default {
         this.outputTypeArray.forEach((item, index) => {
           nodeParam.searchParams[item] = this.param[index]
         })
+        if (this.item !== []) {
+          nodeParam.specifyColumns = this.items
+        } else {
+          nodeParam.specifyColumns = '所有字段'
+        }
         nodeParam = JSON.stringify(nodeParam)
         nodeForm.append('paramJson', nodeParam)
         //  上传节点
@@ -487,6 +530,29 @@ export default {
       if (this.objData.status === 0) {
         this.Diagram.commandHandler.deleteSelection()
       }
+    },
+    preventAction (event) {
+      event.target.getElementsByTagName('span')[0].style.visibility = 'visible'
+      var hideArrow = () => {
+        event.target.getElementsByTagName('span')[0].style.visibility = 'hidden'
+      }
+      setTimeout(hideArrow, 1000)
+      event.preventDefault()
+    },
+    changeOrder (event) {
+      // 拖拽位置点
+      console.log(event.target.innerText)
+      //  获取拖拽目标索引
+      var id = event.dataTransfer.getData('id')
+      console.log(this.items[id.valueOf()])
+      console.log(id, 'id')
+      // 插入拖拽位置点
+      var itemValue = this.items[id.valueOf()]
+      this.items.splice(id.valueOf(), 1)
+      this.items.splice(event.target.innerText.valueOf(), 0, itemValue)
+    },
+    drag (evt) {
+      evt.dataTransfer.setData('id', evt.target.id)
     },
     saveFile (fileName, fileId, modelData) {
       var taskForm = new FormData()
@@ -657,6 +723,28 @@ export default {
       })
       console.log(outputArray)
       this.outputTypeArray = outputArray
+    },
+    addItem () {
+//        判断是否已经有了这个字段
+      if (this.items.indexOf(this.queryItem) !== -1) {
+        alert('已经有了这个字段！')
+      } else {
+        if (this.queryItem !== '') {
+          this.items.push(this.queryItem)
+          this.queryItem = ''
+        } else {
+          alert('不能为空')
+        }
+      }
+    },
+    deleteItem (item) {
+      this.items = this.items.filter(it => it !== item
+      )
+    },
+    keyAddItem (event) {
+      if (event.keyCode === 13) {
+        this.addItem()
+      }
     }
   }
 }
@@ -679,18 +767,22 @@ export default {
     margin-top: 0px;
   }
   .ivu-menu-horizontal{
-    height:80px;
-    line-height: 80px;
+    height:60px;
+    line-height: 60px;
+  }
+  .menu-horizontal{
+    background-color: rgb(33,37,40);
   }
   .logo {
-    height: 80px;
+    height: 60px;
   }
 
   .logo  span {
-      width:80px;
-      height: 80px;
+      width:70px;
+      height: 55px;
       background: url('./assets/image/Windata.png');
       background-size:100% 100%;
+      background-position: 0 3px;
   }
 
   .right-content{
@@ -714,7 +806,7 @@ export default {
   .auto-layout{
     background: url('../image/autoLayout.jpg');
     position:absolute;
-    top: 130px;
+    top: 100px;
     right:50px;
     background-size:100% 100%;
     width: 30px;
@@ -723,23 +815,24 @@ export default {
   }
 
   .create-save{
-       height:40px;
-       background: rgb(200,200,200);
-       line-height: 40px;
-     }
+       height:30px;
+       background: rgb(248,248,248);
+       line-height: 30px;
+  }
 
   .create-save .ivu-menu-item{
-    height:40px;
-    background: rgb(200,200,200) !important;
+    height:30px;
+    background: rgb(248,248,248) !important;
     color: black !important;
+    font-size: 0.5rem;
   }
   .create-save .ivu-menu-item-active{
-    background: #e0e0e0 !important;
-    color: #0000ff !important;
+    background: rgb(248,248,248) !important;
+    color: #000000 !important;
   }
 
   .create-save .ivu-menu-item:hover{
-    background: #e0e0e0 !important;
+    background: rgb(248,248,248) !important;
   }
 
   .customProps{
@@ -750,7 +843,79 @@ export default {
   .customProps span{
     width: 15%;
     margin-top:2%;
-    margin-right: 10px;
+    margin-right: 2px;
+  }
+
+  .customProps .title{
+    margin-top:2%;
+    display:inline-block;
+    margin-bottom:1%;
+    width:100%;
+    font-size:0.8rem;
+  }
+
+  .customProps .title-template{
+    width:100%;
+  }
+
+  .customProps .query-part{
+    border: #000000 solid 1px;
+    padding:2%;
+  }
+
+  .customProps .item-content{
+    display:inline-block;
+  }
+
+  .query-item li{
+    list-style: none;
+    border: 1px solid;
+    border-radius: 5px;
+    width:80px;
+    display:inline-block;
+    text-align: right;
+    margin-top:10px;
+  }
+
+  .query-item .segment{
+    display:inline-block;
+  }
+
+  .query-item .middle-area{
+    display:inline-block;
+    height:30px;
+    vertical-align: middle;
+    width:15px;
+    background: white;
+    color: white;
+    cursor:crosshair
+  }
+
+  .first-drop-area{
+    display:inline-block;
+    position: absolute;
+    bottom:140px;
+    left:0px;
+    width:16px;
+    height: 40px;
+    color:white;
+    background: white;
+    vertical-align: middle;
+    cursor:crosshair
+  }
+
+  .last-drop-area{
+    margin-top:2px;
+    display:inline-block;
+    width:100px;
+    height: 25px;
+    color:white;
+    background: white;
+    vertical-align: middle;
+  }
+
+  .query-item button{
+    margin-right:40%;
   }
 
   .customProps input{
@@ -763,9 +928,67 @@ export default {
     margin-top:2%;
   }
 
+  .customProps .delete-icon{
+    display:inline-block;
+    width:10px;
+    height: 10px;
+    background: url('assets/image/deleteIcon.png');
+    background-size:100% 100% ;
+    margin-right:1%;
+  }
+
+  .delete-part{
+    border-left: 1px solid;
+    display:inline-block;
+    padding: 2px;
+  }
+
+  .query-item{
+    width:100%;
+  }
+
+  .query-item input{
+    margin-right:10px;
+  }
+
   .date-type{
     width:100%
   }
+
+  .create-task{
+    height: 18px;
+    width: 22px;
+    background: url('../image/create-file.png');
+    background-size:100% 100%;
+    vertical-align: middle;
+  }
+
+  .save-task{
+    height: 20px;
+    width: 24px;
+    background: url('../image/savefile.png');
+    background-size:100% 100%;
+    vertical-align: middle;
+  }
+
+  .run-task{
+    height: 20px;
+    width: 24px;
+    background: url('../image/runtask.jpg');
+    background-size:100% 100%;
+    vertical-align: middle;
+  }
+
+  .delete-task{
+    height: 16px;
+    width: 16px;
+    margin-right:4px;
+    background: url('../image/remove.png');
+    background-size:100% 100%;
+    vertical-align: middle;
+  }
+
+
 </style>
 
 <style>

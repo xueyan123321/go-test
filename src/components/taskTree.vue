@@ -1,5 +1,8 @@
 <template>
-  <Tree :data="baseData" @on-select-change='select' class="info"></Tree>
+  <Tree :data="baseData"
+        @on-select-change='select'
+        @on-toggle-expand='toggleIcon'
+        class="info"></Tree>
 </template>
 
 <script type="text/ecmascript-6">
@@ -7,7 +10,7 @@
     data () {
       return {
         baseData: [{
-          title: `<span class="icon"></span> 任务列表`,
+          title: `<span class="icon-title"></span> 任务列表`,
           expand: true,
           children: []
         }]
@@ -55,6 +58,13 @@
             alert(error)
           })
         }
+      },
+      toggleIcon () {
+        if (this.baseData[0].title === `<span class="icon-title"></span> 任务列表`) {
+          this.baseData[0].title = `<span class="icon-title-open"></span> 任务列表`
+        } else {
+          this.baseData[0].title = `<span class="icon-title"></span> 任务列表`
+        }
       }
     }
   }
@@ -71,12 +81,33 @@
 </style>
 
 <style>
+  .icon-title{
+    width:15px;
+    height:15px;
+    display: inline-block ;
+    background: url('../assets/image/openfolder.png');
+    background-size:100% 100%;
+    margin-right:5px;
+    vertical-align: middle;
+  }
+
   .icon{
     width:15px;
     height:15px;
     display: inline-block ;
-    background: url('../assets/image/p14.png');
+    background: url('../assets/image/diagram.png');
     background-size:100% 100%;
     margin-right:5px;
+    vertical-align: middle;
+  }
+
+  .icon-title-open{
+    width:15px;
+    height:15px;
+    display: inline-block ;
+    background: url('../assets/image/foldFiles.png');
+    background-size:100% 100%;
+    margin-right:5px;
+    vertical-align: middle;
   }
 </style>
