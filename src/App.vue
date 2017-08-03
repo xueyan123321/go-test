@@ -40,7 +40,7 @@
     <div class="content-container">
       <Menu :theme="theme2" width="50px" @on-select="selectTree">
         <Menu-item name="1" class="left-nav">任务开发</Menu-item>
-        <Menu-item name="2" class="left-nav">脚本开发</Menu-item>
+        <Menu-item name="2" class="left-nav">资源管理</Menu-item>
       </Menu>
 
       <taskTree v-if="showTree === '1'"
@@ -48,7 +48,7 @@
                 @sentResponse="cover=true"
                 @receiveResponse="cover=false"
                 @responseError="cover=false"></taskTree>
-      <scriptsTree v-else></scriptsTree>
+      <resourceManager v-else></resourceManager>
 
       <div style="width:240px; height:140px; top: 100px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
         <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
@@ -109,15 +109,37 @@
           <div class="first-drop-area"
                @dragover="preventAction"
                @drop="changeOrder"
-          >0<span style="color:red;visibility: hidden;">haha</span></div>
-          <div v-for="(item,index) in items" class="segment"><div class="middle-area"
-                                                                  @dragover="preventAction"
-                                                                  @drop="changeOrder"><span style="color:red; visibility: hidden;">haha</span>{{index}}</div><li draggable="true" @dragstart="drag" :id="index">{{item}} <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li><div  class="middle-area"
+          >0</div>
+          <div v-for="(item,index) in items" class="segment">
+            <div class="li-framework">
+              <div class="middle-area li-left-area" v-show="showArea"
+                   @dragover="preventAction"
+                   @drop="changeOrder"
+                   @dragenter="showArrow"
+                   @dragleave="hideArrow">
+                {{index}}
+              </div>
+              <li draggable="true" :id="index"
+                  @dragstart="startDrag"
+                  @dragend="endDrag"
+                  @drag="showTheArea">{{item}} <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
+              <div class="middle-area li-right-area" v-show="showArea"
+                   @dragover="preventAction"
+                   @drop="changeOrder"
+                   @dragenter="showArrow"
+                   @dragleave="hideArrow">{{index+1}}
+              </div>
+            </div><div  class="middle-area"
                   @dragover="preventAction"
-                  @drop="changeOrder">{{index+1}}<span style="color:red;visibility: hidden;">haha</span></div>
-          </div><div class="last-drop-area"
+                  @drop="changeOrder"
+                  @dragenter="showArrow"
+                  @dragleave="hideArrow">{{index}}
+            </div>
+          </div>
+          <div class="last-drop-area"
                      @dragover="preventAction"
-                     @drop="changeOrder">{{items.length}}<span style="color:red;visibility: hidden;">haha</span></div>
+                     @drop="changeOrder">{{items.length}}<span style="color:red;visibility: hidden;">haha</span>
+          </div>
         </div>
       </div>
     </Modal>
@@ -197,7 +219,8 @@ export default {
       lastFileId: '',
       lastModelData: {},
       queryItem: '',
-      items: []
+      items: [],
+      showArea: false
     }
   },
   mounted () {
@@ -532,15 +555,16 @@ export default {
       }
     },
     preventAction (event) {
-      event.target.getElementsByTagName('span')[0].style.visibility = 'visible'
-      var hideArrow = () => {
-        event.target.getElementsByTagName('span')[0].style.visibility = 'hidden'
-      }
-      setTimeout(hideArrow, 1000)
+//      event.target.getElementsByTagName('span')[0].style.visibility = 'visible'
+//      var hideArrow = () => {
+//        event.target.getElementsByTagName('span')[0].style.visibility = 'hidden'
+//      }
+//      setTimeout(hideArrow, 1000)
       event.preventDefault()
     },
     changeOrder (event) {
       // 拖拽位置点
+      event.target.style.position = 'absolute'
       console.log(event.target.innerText)
       //  获取拖拽目标索引
       var id = event.dataTransfer.getData('id')
@@ -551,8 +575,23 @@ export default {
       this.items.splice(id.valueOf(), 1)
       this.items.splice(event.target.innerText.valueOf(), 0, itemValue)
     },
-    drag (evt) {
+    startDrag (evt) {
       evt.dataTransfer.setData('id', evt.target.id)
+    },
+    showTheArea (evt) {
+      this.showArea = true
+      evt.target.style.visibility = 'hidden'
+    },
+    endDrag (evt) {
+      this.showArea = false
+      evt.target.style.visibility = 'visible'
+    },
+    showArrow (evt) {
+      console.log(evt)
+      evt.target.style.position = 'static'
+    },
+    hideArrow (evt) {
+      evt.target.style.position = 'absolute'
     },
     saveFile (fileName, fileId, modelData) {
       var taskForm = new FormData()
@@ -812,6 +851,7 @@ export default {
     width: 30px;
     height: 20px;
     z-index: 100;
+    cursor:pointer;
   }
 
   .create-save{
@@ -875,9 +915,15 @@ export default {
     display:inline-block;
     text-align: right;
     margin-top:10px;
+    margin-left:10px;
   }
 
   .query-item .segment{
+    display:inline-block;
+  }
+
+  .li-framework{
+    position: relative;
     display:inline-block;
   }
 
@@ -885,10 +931,11 @@ export default {
     display:inline-block;
     height:30px;
     vertical-align: middle;
-    width:15px;
+    width:25px;
     background: white;
     color: white;
-    cursor:crosshair
+    cursor:crosshair;
+    top:5px;
   }
 
   .first-drop-area{
@@ -902,6 +949,24 @@ export default {
     background: white;
     vertical-align: middle;
     cursor:crosshair
+  }
+
+  .query-item .li-left-area{
+    position: absolute;
+    height:40px;
+    width:90px;
+    opacity: 0.2;
+    z-index:2;
+  }
+
+  .query-item .li-right-area{
+    position: absolute;
+    height:40px;
+    width:0px;
+    opacity: 0.2;
+    right:0px;
+    z-index:2;
+    top:0px;
   }
 
   .last-drop-area{
