@@ -54,7 +54,7 @@
         <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
       </div>
       <span>
-        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:164px;left: 240px;z-index: 98">
+        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:175px;left: 240px;z-index: 98">
         </div>
       </span>
       <span>
@@ -78,16 +78,17 @@
             <span class="run-task"></span>
               运行任务
           </Menu-item>
-        </Menu>
-        <div id="myDiagramDiv" ref="diagram"
-             style="width:1650px; height:80vh; background-color: #ffffff; border: solid 1px black">
+        </Menu><div class="diagram-container" style="position: relative">
+          <div id="myDiagramDiv" ref="diagram"
+               style="width:85vw; height:80vh; background-color: #ffffff; border: solid 1px black;">
+          </div>
+          <span @click="setLayout" class="auto-layout"></span>
         </div>
       </span>
     </div>
     <br>
-    <button @click="showModel">show model</button>
-    <span @click="setLayout" class="auto-layout"></span>
-    <p>this is {{GraphObjectModel}}</p>
+    <!--<button @click="showModel">show model</button>-->
+    <!--<p>this is {{GraphObjectModel}}</p>-->
     <Modal
       v-model="showCustom"
       title="定制图表框属性"
@@ -122,7 +123,9 @@
               <li draggable="true" :id="index"
                   @dragstart="startDrag"
                   @dragend="endDrag"
-                  @drag="showTheArea">{{item}} <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
+                  @drag="showTheArea"><div style="width: 40px;
+    display: inline-block;
+    text-overflow: ellipsis; overflow:hidden; vertical-align: middle; white-space: normal"  :title="item">{{item}}</div> <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
               <div class="middle-area li-right-area" v-show="showArea"
                    @dragover="preventAction"
                    @drop="changeOrder"
@@ -807,6 +810,7 @@ export default {
   }
   .ivu-menu-horizontal{
     height:60px;
+    width:99vw;
     line-height: 60px;
   }
   .menu-horizontal{
@@ -825,7 +829,6 @@ export default {
   }
 
   .right-content{
-    margin-left:900px !important;
   }
 
   .ivu-menu-vertical{
@@ -845,8 +848,8 @@ export default {
   .auto-layout{
     background: url('../image/autoLayout.jpg');
     position:absolute;
-    top: 100px;
-    right:50px;
+    top: 10px;
+    right:10px;
     background-size:100% 100%;
     width: 30px;
     height: 20px;
@@ -856,6 +859,7 @@ export default {
 
   .create-save{
        height:30px;
+       width:85vw !important;
        background: rgb(248,248,248);
        line-height: 30px;
   }
@@ -916,6 +920,7 @@ export default {
     text-align: right;
     margin-top:10px;
     margin-left:10px;
+    text-overflow: ellipsis;
   }
 
   .query-item .segment{
@@ -1053,6 +1058,11 @@ export default {
     vertical-align: middle;
   }
 
+  @media (max-width: 1680px){
+    .ivu-menu-horizontal{
+      width:100vw;
+    }
+  }
 
 </style>
 
@@ -1181,5 +1191,6 @@ export default {
     opacity:0.7;
     z-index:100;
   }
+
 </style>
 
