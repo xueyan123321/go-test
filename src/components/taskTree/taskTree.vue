@@ -6,6 +6,7 @@
 </template>
 
 <script type="text/ecmascript-6">
+  const SUCCESS = 200
   export default{
     data () {
       return {
@@ -32,7 +33,7 @@
         return Promise.reject(error)
       })
       this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {
-        if (res.data.content.errorCode === 200) {
+        if (res.data.content.errorCode === SUCCESS) {
           var tasks = res.data.content.data
           var listTask = []
           tasks.forEach((item) => {
@@ -80,34 +81,27 @@
   }
 </style>
 
-<style>
+<style lang="scss">
+  @import '../../assets/scss/mixin.scss';
+
   .icon-title{
+    @include imgIcon('openfolder.png');
     width:15px;
     height:15px;
-    display: inline-block ;
-    background: url('../assets/image/openfolder.png');
-    background-size:100% 100%;
-    margin-right:5px;
-    vertical-align: middle;
   }
 
   .icon{
-    width:15px;
-    height:15px;
-    display: inline-block ;
-    background: url('../assets/image/diagram.png');
-    background-size:100% 100%;
+    @include imgIcon('diagram.png');
     margin-right:5px;
-    vertical-align: middle;
+    width:16px;
+    height:15px;
   }
 
   .icon-title-open{
+    @include imgIcon('foldFiles.png');
     width:15px;
     height:15px;
-    display: inline-block ;
-    background: url('../assets/image/foldFiles.png');
-    background-size:100% 100%;
     margin-right:5px;
-    vertical-align: middle;
+
   }
 </style>

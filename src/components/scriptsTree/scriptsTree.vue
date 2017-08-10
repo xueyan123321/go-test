@@ -36,7 +36,7 @@
   .icon{
     width:15px;
     height:15px;
-    background: url('../assets/image/p14.png');
+    background: url('../../assets/image/p14.png');
     background-size:100% 100%;
   }
   .ivu-tree-title, ivu-tree-children{

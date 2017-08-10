@@ -1,0 +1,6 @@
+@mixin imgIcon($url){
+  vertical-align: middle;
+  display: inline-block ;
+  background: url($url);
+  background-size:100% 100%;
+}

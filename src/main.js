@@ -8,7 +8,8 @@ import 'iview/dist/styles/iview.css'
 
 import axios from 'axios'
 import VueAxios from 'vue-axios'
-import config from './assets/config'
+import config from './assets/js/config'
+import './assets/scss/index.sass'
 
 Vue.use(VueAxios, axios)
 // 全局变量
