@@ -487,7 +487,7 @@ export default {
           }).catch((error) => {
             alert(error)
           })
-          self.createSaveSelect('2')
+          self.createSaveSelect('saveTask')
         }
       }
       return {modelData: myDiagram.model, Diagram: myDiagram}
@@ -544,7 +544,7 @@ export default {
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/taskNodes', nodeForm).then((res) => {
           if (res.data.content.errorCode === SUCCESS) {
             this.objData.id = res.data.content.data.id
-            this.createSaveSelect('2')
+            this.createSaveSelect('saveTask')
           } else {
             alert(res.data.content.errorMsg)
           }
