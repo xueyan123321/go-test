@@ -89,6 +89,7 @@
     <br>
     <!--<button @click="showModel">show model</button>-->
     <!--<p>this is {{GraphObjectModel}}</p>-->
+    // 聚合查询和源数据查询定制属性弹出框
     <Modal
       v-model="showCustom"
       title="定制图表框属性"
@@ -146,12 +147,7 @@
         </div>
       </div>
     </Modal>
-    <Modal
-      v-model="whetherSave"
-      @on-ok="saveLastFile"
-    >
-      <div style="text-align: center;font-size: 1rem">是否保存上一次图表数据?</div>
-    </Modal>
+    // 数据导出和消息通知弹出框
     <Modal
       v-model="showCustom2"
       title="定制图表框属性"
@@ -161,6 +157,13 @@
       <div class="customProps">
         <span>节点名: </span><input type="text" v-model="customProps.name">
       </div>
+    </Modal>
+    // 是否保存任务弹出框
+    <Modal
+      v-model="whetherSave"
+      @on-ok="saveLastFile"
+    >
+      <div style="text-align: center;font-size: 1rem">是否保存上一次图表数据?</div>
     </Modal>
     <div class="cover" v-if="cover">
       <div class="spinner">
@@ -810,7 +813,6 @@ export default {
   }
 }
 </script>
-
 <style scoped lang="scss">
   $menuBackground:rgb(248,248,248);
   @import 'assets/scss/mixin.scss';
@@ -1054,6 +1056,5 @@ export default {
       width:100vw;
     }
   }
-
 </style>
 
