@@ -89,7 +89,7 @@
     <br>
     <!--<button @click="showModel">show model</button>-->
     <!--<p>this is {{GraphObjectModel}}</p>-->
-   <!--聚合查询和源数据查询定制属性弹出框-->
+   <!--aggregate query and Source data query's modal-->
     <Modal
       v-model="showCustom"
       title="定制图表框属性"
@@ -147,7 +147,7 @@
         </div>
       </div>
     </Modal>
-    <!--数据导出和消息通知弹出框-->
+    <!--data export and message notification's modal-->
     <Modal
       v-model="showCustom2"
       title="定制图表框属性"
@@ -158,7 +158,7 @@
         <span>节点名: </span><input type="text" v-model="customNodeProps.name">
       </div>
     </Modal>
-    <!--是否保存任务弹出框-->
+    <!--whether to save modal-->
     <Modal
       v-model="whetherSave"
       @on-ok="saveLastFile"
