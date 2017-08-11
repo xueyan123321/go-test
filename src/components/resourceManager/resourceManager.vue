@@ -52,7 +52,7 @@
 
 <style scoped lang="scss">
   .info{
-    width:180px;
+    width:230px;
     padding-left:10px;
   }
   .icon{
@@ -74,7 +74,7 @@
     height: 15px;
     background: url('upload.jpg');
     padding:0px;
-    margin-left:150px;
+    margin-left:200px;
     background-size:100% 100%;
     cursor:pointer
   }

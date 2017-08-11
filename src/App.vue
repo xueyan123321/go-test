@@ -39,27 +39,27 @@
     </Menu>
     <div class="content-container">
       <Menu theme="light" width="50px" @on-select="selectTree">
-        <Menu-item name="1" class="left-nav">任务开发</Menu-item>
-        <Menu-item name="2" class="left-nav">资源管理</Menu-item>
+        <Menu-item name="taskTree" class="left-nav">任务开发</Menu-item>
+        <Menu-item name="resourceManage" class="left-nav">资源管理</Menu-item>
       </Menu>
 
-      <taskTree v-if="showTree === '1'"
+      <taskTree v-if="showTree === 'taskTree'"
                 @getFile="showFileDia"
                 @sentResponse="cover=true"
                 @receiveResponse="cover=false"
                 @responseError="cover=false"></taskTree>
       <resourceManager v-else></resourceManager>
 
-      <div style="width:240px; height:140px; top: 100px; left: 240px; position:absolute; z-index: 99; background: #ffffff;">
+      <div style="width:240px; height:140px; top: 100px; left: 290px; position:absolute; z-index: 99; background: #ffffff;">
         <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
       </div>
       <span>
-        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:175px;left: 240px;z-index: 98">
+        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:175px;left: 290px;z-index: 98">
         </div>
       </span>
       <span>
         <Menu mode="horizontal" theme="primary" active-name="1" @on-select="createSaveSelect" class="create-save">
-          <Modal v-model="modelShow" title="请输入文件名称" @on-ok="createFile">
+          <Modal v-model="createFileModal" title="请输入文件名称" @on-ok="createFile">
             <input type="text" v-model="newFileName">
           </Modal>
           <Menu-item name="createTask">
@@ -96,25 +96,25 @@
       @on-ok="submitTheProps"
       @on-cancel="cancelCreate"
       >
-      <div class="customProps">
-        <span>节点名: </span><input type="text" v-model="customProps.name">
-        <span>索引名: </span><input type="text" v-model="customProps.indexName">
+      <div class="customNodeProps">
+        <span>节点名: </span><input type="text" v-model="customNodeProps.name">
+        <span>索引名: </span><input type="text" v-model="customNodeProps.indexName">
         <strong class="title">查询命令</strong>
         <div class="query-part">
-          <span class="title-template">查询模板:</span><textarea cols="70" rows="10" v-model="customProps.jsonFile" v-if="update"></textarea>
+          <span class="title-template">查询模板:</span><textarea cols="70" rows="10" v-model="customNodeProps.jsonFile" v-if="customNodeProps.update"></textarea>
           <button style="margin-left:0%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
-          <div class='date-type' v-for="(item,key) in outputTypeArray"><span>{{item}}</span><input type="text" v-model="param[key]"></div>
+          <div class='date-type' v-for="(item,key) in customNodeProps.outputTypeArray"><span>{{item}}</span><input type="text" v-model="customNodeProps.param[key]"></div>
         </div>
         <strong class="title">查询字段</strong>
         <div class="query-item">
-          <input type="text" v-model="queryItem" id="queryItem" @keydown="keyAddItem"><button @click="addItem">添加字段</button>
+          <input type="text" v-model="customNodeProps.queryItem" id="queryItem" @keydown="keyAddItem"><button @click="addItem">添加字段</button>
           <div class="first-drop-area"
                @dragover="preventAction"
                @drop="changeOrder"
           >0</div>
-          <div v-for="(item,index) in customProps.items" class="segment">
+          <div v-for="(item,index) in customNodeProps.items" class="segment">
             <div class="li-framework">
-              <div class="middle-area li-left-area" v-show="showArea"
+              <div class="middle-area li-left-area" v-show="customNodeProps.showArea"
                    @dragover="preventAction"
                    @drop="changeOrder"
                    @dragenter="showArrow"
@@ -127,7 +127,7 @@
                   @drag="showTheArea"><div style="width: 40px;
     display: inline-block;
     text-overflow: ellipsis; overflow:hidden; vertical-align: middle; white-space: normal"  :title="item">{{item}}</div> <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
-              <div class="middle-area li-right-area" v-show="showArea"
+              <div class="middle-area li-right-area" v-show="customNodeProps.showArea"
                    @dragover="preventAction"
                    @drop="changeOrder"
                    @dragenter="showArrow"
@@ -142,7 +142,7 @@
           </div>
           <div class="last-drop-area"
                      @dragover="preventAction"
-                     @drop="changeOrder">{{customProps.length}}<span style="color:red;visibility: hidden;">haha</span>
+                     @drop="changeOrder">{{customNodeProps.length}}<span style="color:red;visibility: hidden;">haha</span>
           </div>
         </div>
       </div>
@@ -154,8 +154,8 @@
       @on-ok = "submitTheProps"
       @on-cancel ="cancelCreate"
     >
-      <div class="customProps">
-        <span>节点名: </span><input type="text" v-model="customProps.name">
+      <div class="customNodeProps">
+        <span>节点名: </span><input type="text" v-model="customNodeProps.name">
       </div>
     </Modal>
     <!--是否保存任务弹出框-->
@@ -203,25 +203,22 @@ export default {
   name: 'app',
   data () {
     return {
-      newFileName: '',
-      GraphObjectModel: {},
-      showCustom: false,
-      customProps: {name: '', jsonFile: '', items: []},
+      //      GraphObjectModel: {},
       objData: {},
-      Diagram: '',
-      modelShow: false,
-      showTree: '1',
-      update: true,
-      outputTypeArray: [],
-      param: [],
-      showCustom2: false,
+      createFileModal: false,
+      newFileName: '',
+      showTree: 'taskTree',
       cover: false,
-      diaChanged: false,
-      whetherSave: false,
+//      diagram status
+      Diagram: '',
       task: {name: '', id: '', modelData: {}},
       lastTask: {name: '', id: '', modelData: {}},
-      queryItem: '',
-      showArea: false
+      diaChanged: false,
+      whetherSave: false,
+//      diagram properties' modal
+      showCustom: false,
+      showCustom2: false,
+      customNodeProps: {name: '', jsonFile: '', items: [], param: [], queryItem: '', outputTypeArray: [], showArea: false, update: true}
     }
   },
   mounted () {
@@ -281,13 +278,13 @@ export default {
           doubleClick: function (e, obj) {
             console.log(self.task.id, 'aa')
             console.log(obj.data.name)
-            self.outputTypeArray = []
+            self.customNodeProps.outputTypeArray = []
             self.axios.get(`http://${self.$mainUrl}/windata-server/web/api/taskNode?taskNodeId=${obj.data.id}&name=${obj.data.name}`).then((res) => {
               if (res.data.content.errorCode === SUCCESS) {
                 try {
-                  self.customProps.name = res.data.content.data.name
+                  self.customNodeProps.name = res.data.content.data.name
                 } catch (e) {
-                  self.customProps.name = ''
+                  self.customNodeProps.name = ''
                 }
                 try {
                   var param = JSON.parse(res.data.content.data.paramJson)
@@ -295,18 +292,18 @@ export default {
                   param = {}
                 }
                 console.log(param, 'param')
-                self.customProps.indexName = param.indexName
-                self.customProps.jsonFile = param.searchTemplate
-                self.queryItem = ''
+                self.customNodeProps.indexName = param.indexName
+                self.customNodeProps.jsonFile = param.searchTemplate
+                self.customNodeProps.queryItem = ''
                 if (param.specifyColumns !== undefined) {
-                  self.customProps.items = param.specifyColumns
+                  self.customNodeProps.items = param.specifyColumns
                 } else {
-                  self.customProps.items = []
+                  self.customNodeProps.items = []
                 }
                 var i = 0
                 for (var key in param.searchParams) {
-                  self.outputTypeArray.push(key)
-                  self.param[i] = param.searchParams[key]
+                  self.customNodeProps.outputTypeArray.push(key)
+                  self.customNodeProps.param[i] = param.searchParams[key]
                   i++
                 }
                 if (obj.data.type === SOURCE_QUERY || obj.data.type === AGGREGATION_QUERY) {
@@ -442,17 +439,17 @@ export default {
       tool.doDropOnto = function (e, obj) {
         self.objData = myDiagram.model.nodeDataArray[myDiagram.model.nodeDataArray.length - 1]
         console.log(self.objData, 'sasa')
-        self.customProps.name = self.objData.name
+        self.customNodeProps.name = self.objData.name
         if (self.objData.status === 0) {
           //  初始化节点编辑框
           if (self.objData.type === SOURCE_QUERY || self.objData.type === AGGREGATION_QUERY) {
             self.showCustom = true
-            self.customProps.indexName = ''
-            self.customProps.jsonFile = ''
-            self.outputTypeArray = []
-            self.param = []
-            self.queryItem = ''
-            self.customProps.items = []
+            self.customNodeProps.indexName = ''
+            self.customNodeProps.jsonFile = ''
+            self.customNodeProps.outputTypeArray = []
+            self.customNodeProps.param = []
+            self.customNodeProps.queryItem = ''
+            self.customNodeProps.items = []
           } else {
             console.log(self.objData.type)
             self.showCustom2 = true
@@ -494,13 +491,13 @@ export default {
     submitTheProps () {
       var correctSubmit = true // correctSubmit为false时，判断不符合要求的提交
       if (this.objData.type === SOURCE_QUERY || this.objData.type === AGGREGATION_QUERY) {
-        if (this.customProps.name === '' || this.customProps.jsonFile === '' || this.param.indexOf('') !== -1 || this.param === []) {
+        if (this.customNodeProps.name === '' || this.customNodeProps.jsonFile === '' || this.customNodeProps.param.indexOf('') !== -1 || this.customNodeProps.param === []) {
           correctSubmit = false
         } else {
           correctSubmit = true
         }
       } else {
-        if (this.customProps.name === '') {
+        if (this.customNodeProps.name === '') {
           correctSubmit = false
         } else {
           correctSubmit = true
@@ -512,7 +509,7 @@ export default {
           this.Diagram.commandHandler.deleteSelection()
         }
       } else {
-        var newtext = this.customProps.name
+        var newtext = this.customNodeProps.name
         console.log(newtext)
         console.log(this.task.id)
         this.Diagram.model.setDataProperty(this.objData, 'name', newtext)
@@ -525,14 +522,14 @@ export default {
         nodeForm.append('id', this.objData.id)
         console.log(this.objData.id, 'hehe')
         var nodeParam = {}
-        nodeParam.indexName = this.customProps.indexName
-        nodeParam.searchTemplate = this.customProps.jsonFile
+        nodeParam.indexName = this.customNodeProps.indexName
+        nodeParam.searchTemplate = this.customNodeProps.jsonFile
         nodeParam.searchParams = {}
-        this.outputTypeArray.forEach((item, index) => {
-          nodeParam.searchParams[item] = this.param[index]
+        this.customNodeProps.outputTypeArray.forEach((item, index) => {
+          nodeParam.searchParams[item] = this.customNodeProps.param[index]
         })
         if (this.item !== []) {
-          nodeParam.specifyColumns = this.customProps.items
+          nodeParam.specifyColumns = this.customNodeProps.items
         } else {
           nodeParam.specifyColumns = '所有字段'
         }
@@ -567,22 +564,22 @@ export default {
       console.log(event.target.innerText)
       //  获取拖拽目标索引
       var id = event.dataTransfer.getData('id')
-      console.log(this.customProps.items[id.valueOf()])
+      console.log(this.customNodeProps.items[id.valueOf()])
       console.log(id, 'id')
       // 插入拖拽位置点
-      var itemValue = this.customProps.items[id.valueOf()]
-      this.customProps.items.splice(id.valueOf(), 1)
-      this.customProps.items.splice(event.target.innerText.valueOf(), 0, itemValue)
+      var itemValue = this.customNodeProps.items[id.valueOf()]
+      this.customNodeProps.items.splice(id.valueOf(), 1)
+      this.customNodeProps.items.splice(event.target.innerText.valueOf(), 0, itemValue)
     },
     startDrag (evt) {
       evt.dataTransfer.setData('id', evt.target.id)
     },
     showTheArea (evt) {
-      this.showArea = true
+      this.customNodeProps.showArea = true
       evt.target.style.visibility = 'hidden'
     },
     endDrag (evt) {
-      this.showArea = false
+      this.customNodeProps.showArea = false
       evt.target.style.visibility = 'visible'
     },
     showArrow (evt) {
@@ -613,7 +610,7 @@ export default {
     },
     createSaveSelect (e) {
       if (e === 'createTask') {
-        this.modelShow = true
+        this.createFileModal = true
       } else if (e === 'saveTask') {
         console.log(this.task.name)
         this.saveFile(this.task.name, this.task.id, this.task.modelData)
@@ -749,43 +746,43 @@ export default {
       this.Diagram.model.removeChangedListener(this.changeListener)
     },
     format () {
-      console.log(this.customProps.jsonFile)
+      console.log(this.customNodeProps.jsonFile)
       try {
-        var customProps = JSON.parse(this.customProps.jsonFile)
+        var customNodeProps = JSON.parse(this.customNodeProps.jsonFile)
       } catch (e) {
         alert('请输入正确的json格式文件')
       }
-      this.update = false
+      this.customNodeProps.update = false
       var recover = () => {
-        this.update = true
+        this.customNodeProps.update = true
       }
       setTimeout(recover, 10)
-      this.customProps.jsonFile = JSON.stringify(customProps, null, '\t')
+      this.customNodeProps.jsonFile = JSON.stringify(customNodeProps, null, '\t')
       var regEx = new RegExp(/\{\{(.*?)\}\}/g)
-      var outputArray = this.customProps.jsonFile.match(regEx)
+      var outputArray = this.customNodeProps.jsonFile.match(regEx)
       outputArray = outputArray.map(function (item) {
         item = item.replace(/\{/g, '')
         item = item.replace(/\}/g, '')
         return item
       })
       console.log(outputArray)
-      this.outputTypeArray = outputArray
+      this.customNodeProps.outputTypeArray = outputArray
     },
     addItem () {
 //        判断是否已经有了这个字段
-      if (this.customProps.items.indexOf(this.queryItem) !== -1) {
+      if (this.customNodeProps.items.indexOf(this.customNodeProps.queryItem) !== -1) {
         alert('已经有了这个字段！')
       } else {
-        if (this.queryItem !== '') {
-          this.customProps.items.push(this.queryItem)
-          this.queryItem = ''
+        if (this.customNodeProps.queryItem !== '') {
+          this.customNodeProps.items.push(this.customNodeProps.queryItem)
+          this.customNodeProps.queryItem = ''
         } else {
           alert('不能为空')
         }
       }
     },
     deleteItem (item) {
-      this.customProps.items = this.customProps.items.filter(it => it !== item
+      this.customNodeProps.items = this.customNodeProps.items.filter(it => it !== item
       )
     },
     keyAddItem (event) {
@@ -828,7 +825,7 @@ export default {
   }
   .ivu-menu-horizontal{
     height:60px;
-    width:99vw;
+    width:100vw;
     line-height: 60px;
   }
 
@@ -853,7 +850,7 @@ export default {
   }
 
   .info{
-    width:180px;
+    width:230px;
   }
   .ivu-tree-title{
     font-size: 0.5rem;
@@ -890,7 +887,7 @@ export default {
     }
   }
 
-  .customProps{
+  .customNodeProps{
     display:flex;
     flex-wrap:wrap;
     span{
