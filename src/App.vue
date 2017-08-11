@@ -112,7 +112,7 @@
                @dragover="preventAction"
                @drop="changeOrder"
           >0</div>
-          <div v-for="(item,index) in items" class="segment">
+          <div v-for="(item,index) in customProps.items" class="segment">
             <div class="li-framework">
               <div class="middle-area li-left-area" v-show="showArea"
                    @dragover="preventAction"
@@ -142,7 +142,7 @@
           </div>
           <div class="last-drop-area"
                      @dragover="preventAction"
-                     @drop="changeOrder">{{items.length}}<span style="color:red;visibility: hidden;">haha</span>
+                     @drop="changeOrder">{{customProps.length}}<span style="color:red;visibility: hidden;">haha</span>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default {
       newFileName: '',
       GraphObjectModel: {},
       showCustom: false,
-      customProps: {name: '', jsonFile: ''},
+      customProps: {name: '', jsonFile: '', items: []},
       objData: {},
       Diagram: '',
       modelShow: false,
@@ -221,7 +221,6 @@ export default {
       task: {name: '', id: '', modelData: {}},
       lastTask: {name: '', id: '', modelData: {}},
       queryItem: '',
-      items: [],
       showArea: false
     }
   },
@@ -300,9 +299,9 @@ export default {
                 self.customProps.jsonFile = param.searchTemplate
                 self.queryItem = ''
                 if (param.specifyColumns !== undefined) {
-                  self.items = param.specifyColumns
+                  self.customProps.items = param.specifyColumns
                 } else {
-                  self.items = []
+                  self.customProps.items = []
                 }
                 var i = 0
                 for (var key in param.searchParams) {
@@ -453,7 +452,7 @@ export default {
             self.outputTypeArray = []
             self.param = []
             self.queryItem = ''
-            self.items = []
+            self.customProps.items = []
           } else {
             console.log(self.objData.type)
             self.showCustom2 = true
@@ -533,7 +532,7 @@ export default {
           nodeParam.searchParams[item] = this.param[index]
         })
         if (this.item !== []) {
-          nodeParam.specifyColumns = this.items
+          nodeParam.specifyColumns = this.customProps.items
         } else {
           nodeParam.specifyColumns = '所有字段'
         }
@@ -568,12 +567,12 @@ export default {
       console.log(event.target.innerText)
       //  获取拖拽目标索引
       var id = event.dataTransfer.getData('id')
-      console.log(this.items[id.valueOf()])
+      console.log(this.customProps.items[id.valueOf()])
       console.log(id, 'id')
       // 插入拖拽位置点
-      var itemValue = this.items[id.valueOf()]
-      this.items.splice(id.valueOf(), 1)
-      this.items.splice(event.target.innerText.valueOf(), 0, itemValue)
+      var itemValue = this.customProps.items[id.valueOf()]
+      this.customProps.items.splice(id.valueOf(), 1)
+      this.customProps.items.splice(event.target.innerText.valueOf(), 0, itemValue)
     },
     startDrag (evt) {
       evt.dataTransfer.setData('id', evt.target.id)
@@ -774,11 +773,11 @@ export default {
     },
     addItem () {
 //        判断是否已经有了这个字段
-      if (this.items.indexOf(this.queryItem) !== -1) {
+      if (this.customProps.items.indexOf(this.queryItem) !== -1) {
         alert('已经有了这个字段！')
       } else {
         if (this.queryItem !== '') {
-          this.items.push(this.queryItem)
+          this.customProps.items.push(this.queryItem)
           this.queryItem = ''
         } else {
           alert('不能为空')
@@ -786,7 +785,7 @@ export default {
       }
     },
     deleteItem (item) {
-      this.items = this.items.filter(it => it !== item
+      this.customProps.items = this.customProps.items.filter(it => it !== item
       )
     },
     keyAddItem (event) {
