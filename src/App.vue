@@ -89,7 +89,7 @@
     <br>
     <!--<button @click="showModel">show model</button>-->
     <!--<p>this is {{GraphObjectModel}}</p>-->
-    // 聚合查询和源数据查询定制属性弹出框
+   <!--聚合查询和源数据查询定制属性弹出框-->
     <Modal
       v-model="showCustom"
       title="定制图表框属性"
@@ -147,7 +147,7 @@
         </div>
       </div>
     </Modal>
-    // 数据导出和消息通知弹出框
+    <!--数据导出和消息通知弹出框-->
     <Modal
       v-model="showCustom2"
       title="定制图表框属性"
@@ -158,7 +158,7 @@
         <span>节点名: </span><input type="text" v-model="customProps.name">
       </div>
     </Modal>
-    // 是否保存任务弹出框
+    <!--是否保存任务弹出框-->
     <Modal
       v-model="whetherSave"
       @on-ok="saveLastFile"
@@ -205,15 +205,12 @@ export default {
     return {
       newFileName: '',
       GraphObjectModel: {},
-      modelData: {},
       showCustom: false,
       customProps: {name: '', jsonFile: ''},
       objData: {},
       Diagram: '',
       modelShow: false,
-      fileName: '',
       showTree: '1',
-      fileId: '',
       update: true,
       outputTypeArray: [],
       param: [],
@@ -221,9 +218,8 @@ export default {
       cover: false,
       diaChanged: false,
       whetherSave: false,
-      lastFileName: '',
-      lastFileId: '',
-      lastModelData: {},
+      task: {name: '', id: '', modelData: {}},
+      lastTask: {name: '', id: '', modelData: {}},
       queryItem: '',
       items: [],
       showArea: false
@@ -235,7 +231,7 @@ export default {
     var go = this.$go
     var $ = go.GraphObject.make
     var {modelData, Diagram} = this.initTheDiagram($, go)
-    this.modelData = modelData
+    this.task.modelData = modelData
     this.Diagram = Diagram
   },
   components: {
@@ -284,7 +280,7 @@ export default {
             console.log(self.objData)
           },
           doubleClick: function (e, obj) {
-            console.log(self.fileId, 'aa')
+            console.log(self.task.id, 'aa')
             console.log(obj.data.name)
             self.outputTypeArray = []
             self.axios.get(`http://${self.$mainUrl}/windata-server/web/api/taskNode?taskNodeId=${obj.data.id}&name=${obj.data.name}`).then((res) => {
@@ -478,7 +474,7 @@ export default {
         go.CommandHandler.prototype.deleteSelection.call(myDiagram.commandHandler)
         console.log(self.objData)
         var delNodeForm = new FormData()
-        delNodeForm.append('taskId', self.fileId)
+        delNodeForm.append('taskId', self.task.id)
         delNodeForm.append('taskNodeId', self.objData.id)
         if (self.objData.status !== 0) {
           self.axios.post('http://' + self.$mainUrl + '/windata-server/web/api/taskNodes/del', delNodeForm).then((res) => {
@@ -519,13 +515,13 @@ export default {
       } else {
         var newtext = this.customProps.name
         console.log(newtext)
-        console.log(this.fileId)
+        console.log(this.task.id)
         this.Diagram.model.setDataProperty(this.objData, 'name', newtext)
         this.objData.status = 1
 //        构建nodeForm的data数据上传节点数据
         var nodeForm = new FormData()
         nodeForm.append('name', newtext)
-        nodeForm.append('taskId', this.fileId)
+        nodeForm.append('taskId', this.task.id)
         nodeForm.append('viewType', this.objData.type)
         nodeForm.append('id', this.objData.id)
         console.log(this.objData.id, 'hehe')
@@ -601,9 +597,9 @@ export default {
       var taskForm = new FormData()
       taskForm.append('name', fileName)
       taskForm.append('id', fileId)
-      console.log(this.modelData, 'before stringfy')
+      console.log(this.task.modelData, 'before stringfy')
       taskForm.append('viewJson', JSON.stringify(modelData))
-      console.log(this.modelData, 'after stringfy')
+      console.log(this.task.modelData, 'after stringfy')
       this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
         if (res.data.content.errorCode === SUCCESS) {
           console.log(res)
@@ -620,8 +616,8 @@ export default {
       if (e === 'createTask') {
         this.modelShow = true
       } else if (e === 'saveTask') {
-        console.log(this.fileName)
-        this.saveFile(this.fileName, this.fileId, this.modelData)
+        console.log(this.task.name)
+        this.saveFile(this.task.name, this.task.id, this.task.modelData)
       } else if (e === 'deleteTask') {
         this.deleteTask()
       } else {
@@ -636,8 +632,8 @@ export default {
       }
       setTimeout(recover, 10)
       var delTask = new FormData()
-      delTask.append('name', this.fileName)
-      delTask.append('id', this.fileId)
+      delTask.append('name', this.task.name)
+      delTask.append('id', this.task.id)
       this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks/del', delTask).then((res) => {
         if (res.data.content.errorCode === SUCCESS) {
           console.log(res)
@@ -649,9 +645,9 @@ export default {
       })
     },
     runTask () {
-      this.saveFile(this.fileName, this.fileId, this.modelData)
+      this.saveFile(this.task.name, this.task.id, this.task.modelData)
       var runTask = new FormData()
-      runTask.append('id', this.fileId)
+      runTask.append('id', this.task.id)
       this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/task/run', runTask).then((res) => {
         if (res.data.content.errorCode === SUCCESS) {
           console.log(res)
@@ -681,7 +677,7 @@ export default {
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
           if (res.data.content.errorCode === SUCCESS) {
             var taskData = res.data.content.data
-            this.fileId = taskData.id
+            this.task.id = taskData.id
           } else {
             alert(res.data.content.errorMsg)
           }
@@ -694,7 +690,7 @@ export default {
       }
     },
     saveLastFile () {
-      this.saveFile(this.lastFileName, this.lastFileId, this.lastModelData)
+      this.saveFile(this.lastTask.name, this.lastTask.id, this.lastTask.modelData)
     },
     changeListener () {
         //   文件改变，表格变化位为真
@@ -707,17 +703,17 @@ export default {
 //      console.log(id, 'id')
       // 保存上次数据以便询问是否保存上次数据
       this.querryChange()
-      this.lastFileName = this.fileName
-      this.lastFileId = this.fileId
-      console.log(this.lastFileName, 'lastFileName')
-      console.log(this.lastFileId, 'lastFileId')
+      this.lastTask.name = this.task.name
+      this.lastTask.id = this.task.id
+      console.log(this.lastTask.name, 'lastFileName')
+      console.log(this.lastTask.id, 'lastFileId')
 
-      for (var key in this.modelData) {
-        this.lastModelData[key] = this.modelData[key]
+      for (var key in this.task.modelData) {
+        this.lastTask.modelData[key] = this.task.modelData[key]
       }
       // 更换现name和id
-      this.fileName = name
-      this.fileId = id
+      this.task.name = name
+      this.task.id = id
       console.log(fileJson, 'fileJson')
       var fileModel = JSON.parse(fileJson)
       fileModel = JSON.parse(fileModel)
@@ -739,7 +735,7 @@ export default {
       this.Diagram.model.nodeDataArray = fileModel.nodeDataArray
       this.Diagram.model.linkDataArray = fileModel.linkDataArray
 //      this.Diagram.layout = new this.$go.LayeredDigraphLayout()
-//      this.modelData = this.Diagram.model
+//      this.task.modelData = this.Diagram.model
       var addChangelisten = () => {
         this.Diagram.model.addChangedListener(this.changeListener)
       }
@@ -808,7 +804,7 @@ export default {
       setTimeout(recoverLayout, 100)
     }
 //    showModel () {
-//      this.GraphObjectModel = this.modelData.toJSON()
+//      this.GraphObjectModel = this.task.modelData.toJSON()
 //    }
   }
 }
