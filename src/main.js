@@ -15,7 +15,6 @@ Vue.use(VueAxios, axios)
 // 全局变量
 Object.defineProperty(Vue.prototype, '$go', {value: go})
 Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
-
 Vue.use(iView)
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false

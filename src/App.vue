@@ -49,122 +49,137 @@
                 @receiveResponse="cover=false"
                 @responseError="cover=false"></taskTree>
       <resourceManager v-else></resourceManager>
-
-      <div style="width:240px; height:140px; top: 100px; left: 290px; position:absolute; z-index: 99; background: #ffffff;">
-        <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
-      </div>
-      <span>
-        <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:175px;left: 290px;z-index: 98">
-        </div>
-      </span>
-      <span>
-        <Menu mode="horizontal" theme="primary" active-name="1" @on-select="createSaveSelect" class="create-save">
-          <Modal v-model="createFileModal" title="请输入文件名称" @on-ok="createFile">
-            <input type="text" v-model="newFileName">
-          </Modal>
-          <Menu-item name="createTask">
-            <span class="create-task"></span>
-              新建任务
-          </Menu-item>
-          <Menu-item name="saveTask">
-            <span class="save-task"></span>
-              保存任务
-          </Menu-item>
-          <Menu-item name="deleteTask">
-            <span class="delete-task"></span>
-              删除任务
-          </Menu-item>
-          <Menu-item name="runTask">
-            <span class="run-task"></span>
-              运行任务
-          </Menu-item>
-        </Menu><div class="diagram-container" style="position: relative">
-          <div id="myDiagramDiv" ref="diagram"
-               style="width:85vw; height:80vh; background-color: #ffffff; border: solid 1px black;">
+      <div>
+        <span>
+          <div style="width:240px; height:140px; top: 100px; left: 290px; position:absolute; z-index: 99; background: #ffffff;">
+            <span style="display:inline-block; position:relative; text-align: center; top: 120px; font-size: 0.5rem; border: black 1px solid; width:90px">节点组件</span>
           </div>
-          <span @click="setLayout" class="auto-layout"></span>
-        </div>
-      </span>
+          <div id='myPaletteDiv' ref="palette" style="border: solid 1px black; width:90px; height: 50vh; background: #ffffff;position:absolute;top:175px;left: 290px;z-index: 98">
+          </div>
+        </span>
+        <span>
+          <Menu mode="horizontal" theme="primary" active-name="1" @on-select="createSaveSelect" class="create-save">
+            <Modal v-model="createFileModal" title="请输入文件名称" @on-ok="createFile">
+              <input type="text" v-model="newFileName">
+            </Modal>
+            <Menu-item name="createTask">
+              <span class="create-task"></span>
+                新建任务
+            </Menu-item>
+            <Menu-item name="saveTask">
+              <span class="save-task"></span>
+                保存任务
+            </Menu-item>
+            <Menu-item name="deleteTask">
+              <span class="delete-task"></span>
+                删除任务
+            </Menu-item>
+            <Menu-item name="renameTask">
+              <span class="rename-task"></span>
+               重命名任务
+            </Menu-item>
+            <Menu-item name="runTask">
+              <span class="run-task"></span>
+                运行任务
+            </Menu-item>
+          </Menu>
+          <div class="diagram-container" style="position: relative">
+            <div id="myDiagramDiv" ref="diagram"
+                 style="width:85vw; height:80vh; background-color: #ffffff; border: solid 1px black;">
+            </div>
+            <span @click="setLayout" class="auto-layout"></span>
+          </div>
+        </span>
+        <!--rename file modal-->
+        <Modal v-model="renameModal"
+               title="重命名文件"
+               class="rename-modal"
+               @on-ok="submitNewName"
+        >
+          <label for="rename">文件名</label>
+          <input type="text" id="rename" v-model="task.name">
+        </Modal>
+        <!--aggregate query and Source data query's modal-->
+        <Modal
+          v-model="showCustom"
+          title="定制图表框属性"
+          @on-ok="submitTheProps"
+          @on-cancel="cancelCreate"
+        >
+          <div class="customNodeProps">
+            <span>节点名: </span><input type="text" v-model="customNodeProps.name">
+            <span>索引名: </span><input type="text" v-model="customNodeProps.indexName">
+            <strong class="title">查询命令</strong>
+            <div class="query-part">
+              <span class="title-template">查询模板:</span><textarea cols="70" rows="10" v-model="customNodeProps.jsonFile" v-if="customNodeProps.update"></textarea>
+              <button style="margin-left:0%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
+              <div class='date-type' v-for="(item,key) in customNodeProps.outputTypeArray"><span>{{item}}</span><input type="text" v-model="customNodeProps.param[key]"></div>
+            </div>
+            <strong class="title">查询字段</strong>
+            <div class="query-item">
+              <input type="text" v-model="customNodeProps.queryItem" id="queryItem" @keydown="keyAddItem"><button @click="addItem">添加字段</button>
+              <div class="first-drop-area"
+                   @dragover="preventAction"
+                   @drop="changeOrder"
+              >0</div>
+              <div v-for="(item,index) in customNodeProps.items" class="segment">
+                <div class="li-framework">
+                  <div class="middle-area li-left-area" v-show="customNodeProps.showArea"
+                       @dragover="preventAction"
+                       @drop="changeOrder"
+                       @dragenter="showArrow"
+                       @dragleave="hideArrow">
+                    {{index}}
+                  </div>
+                  <li draggable="true" :id="index"
+                      @dragstart="startDrag"
+                      @dragend="endDrag"
+                      @drag="showTheArea"><div style="width: 40px;
+      display: inline-block;
+      text-overflow: ellipsis; overflow:hidden; vertical-align: middle; white-space: normal"  :title="item">{{item}}</div> <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
+                  <div class="middle-area li-right-area" v-show="customNodeProps.showArea"
+                       @dragover="preventAction"
+                       @drop="changeOrder"
+                       @dragenter="showArrow"
+                       @dragleave="hideArrow">{{index+1}}
+                  </div>
+                </div><div  class="middle-area"
+                            @dragover="preventAction"
+                            @drop="changeOrder"
+                            @dragenter="showArrow"
+                            @dragleave="hideArrow">{{index}}
+              </div>
+              </div>
+              <div class="last-drop-area"
+                   @dragover="preventAction"
+                   @drop="changeOrder">{{customNodeProps.length}}<span style="color:red;visibility: hidden;">haha</span>
+              </div>
+            </div>
+          </div>
+        </Modal>
+        <!--data export and message notification's modal-->
+        <Modal
+          v-model="showCustom2"
+          title="定制图表框属性"
+          @on-ok = "submitTheProps"
+          @on-cancel ="cancelCreate"
+        >
+          <div class="customNodeProps">
+            <span>节点名: </span><input type="text" v-model="customNodeProps.name">
+          </div>
+        </Modal>
+        <!--whether to save modal-->
+        <Modal
+          v-model="whetherSave"
+          @on-ok="saveLastFile"
+        >
+          <div style="text-align: center;font-size: 1rem">是否保存上一次图表数据?</div>
+        </Modal>
+      </div>
     </div>
     <br>
     <!--<button @click="showModel">show model</button>-->
     <!--<p>this is {{GraphObjectModel}}</p>-->
-   <!--aggregate query and Source data query's modal-->
-    <Modal
-      v-model="showCustom"
-      title="定制图表框属性"
-      @on-ok="submitTheProps"
-      @on-cancel="cancelCreate"
-      >
-      <div class="customNodeProps">
-        <span>节点名: </span><input type="text" v-model="customNodeProps.name">
-        <span>索引名: </span><input type="text" v-model="customNodeProps.indexName">
-        <strong class="title">查询命令</strong>
-        <div class="query-part">
-          <span class="title-template">查询模板:</span><textarea cols="70" rows="10" v-model="customNodeProps.jsonFile" v-if="customNodeProps.update"></textarea>
-          <button style="margin-left:0%; margin-top:2%; margin-right:60%" @click="format">格式化查询模板</button>
-          <div class='date-type' v-for="(item,key) in customNodeProps.outputTypeArray"><span>{{item}}</span><input type="text" v-model="customNodeProps.param[key]"></div>
-        </div>
-        <strong class="title">查询字段</strong>
-        <div class="query-item">
-          <input type="text" v-model="customNodeProps.queryItem" id="queryItem" @keydown="keyAddItem"><button @click="addItem">添加字段</button>
-          <div class="first-drop-area"
-               @dragover="preventAction"
-               @drop="changeOrder"
-          >0</div>
-          <div v-for="(item,index) in customNodeProps.items" class="segment">
-            <div class="li-framework">
-              <div class="middle-area li-left-area" v-show="customNodeProps.showArea"
-                   @dragover="preventAction"
-                   @drop="changeOrder"
-                   @dragenter="showArrow"
-                   @dragleave="hideArrow">
-                {{index}}
-              </div>
-              <li draggable="true" :id="index"
-                  @dragstart="startDrag"
-                  @dragend="endDrag"
-                  @drag="showTheArea"><div style="width: 40px;
-    display: inline-block;
-    text-overflow: ellipsis; overflow:hidden; vertical-align: middle; white-space: normal"  :title="item">{{item}}</div> <div class="delete-part"><span class="delete-icon" @click="deleteItem(item)"></span></div></li>
-              <div class="middle-area li-right-area" v-show="customNodeProps.showArea"
-                   @dragover="preventAction"
-                   @drop="changeOrder"
-                   @dragenter="showArrow"
-                   @dragleave="hideArrow">{{index+1}}
-              </div>
-            </div><div  class="middle-area"
-                  @dragover="preventAction"
-                  @drop="changeOrder"
-                  @dragenter="showArrow"
-                  @dragleave="hideArrow">{{index}}
-            </div>
-          </div>
-          <div class="last-drop-area"
-                     @dragover="preventAction"
-                     @drop="changeOrder">{{customNodeProps.length}}<span style="color:red;visibility: hidden;">haha</span>
-          </div>
-        </div>
-      </div>
-    </Modal>
-    <!--data export and message notification's modal-->
-    <Modal
-      v-model="showCustom2"
-      title="定制图表框属性"
-      @on-ok = "submitTheProps"
-      @on-cancel ="cancelCreate"
-    >
-      <div class="customNodeProps">
-        <span>节点名: </span><input type="text" v-model="customNodeProps.name">
-      </div>
-    </Modal>
-    <!--whether to save modal-->
-    <Modal
-      v-model="whetherSave"
-      @on-ok="saveLastFile"
-    >
-      <div style="text-align: center;font-size: 1rem">是否保存上一次图表数据?</div>
-    </Modal>
     <div class="cover" v-if="cover">
       <div class="spinner">
         <div class="spinner-container container1">
@@ -216,6 +231,7 @@ export default {
       diaChanged: false,
       whetherSave: false,
 //      diagram properties' modal
+      renameModal: false,
       showCustom: false,
       showCustom2: false,
       customNodeProps: {name: '', jsonFile: '', items: [], param: [], queryItem: '', outputTypeArray: [], showArea: false, update: true}
@@ -239,18 +255,16 @@ export default {
     // initialize the diagram and interceptor
     setAxiosInterceptor () {
       //  设置axios拦截器
-      var self = this
-      this.axios.interceptors.request.use(function (config) {
-        self.cover = true
+      this.axios.interceptors.request.use(config => {
+        this.cover = true
         return config
-      }, function (error) {
-        return Promise.reject(error)
-      })
-      this.axios.interceptors.response.use(function (response) {
-        self.cover = false
+      }, error => Promise.reject(error)
+      )
+      this.axios.interceptors.response.use(response => {
+        this.cover = false
         return response
-      }, function (error) {
-        self.cover = false
+      }, error => {
+        this.cover = false
         return Promise.reject(error)
       })
     },
@@ -589,6 +603,22 @@ export default {
     hideArrow (evt) {
       evt.target.style.position = 'absolute'
     },
+    createSaveSelect (e) {
+      if (e === 'createTask') {
+        this.createFileModal = true
+      } else if (e === 'saveTask') {
+        console.log(this.task.name)
+        this.saveFile(this.task.name, this.task.id, this.task.modelData)
+      } else if (e === 'deleteTask') {
+        this.deleteTask()
+      } else if (e === 'runTask') {
+        this.runTask()
+      } else if (e === 'renameTask') {
+        this.renameTask()
+      } else {
+        alert('未知错误')
+      }
+    },
     saveFile (fileName, fileId, modelData) {
       var taskForm = new FormData()
       taskForm.append('name', fileName)
@@ -607,18 +637,6 @@ export default {
       })
 //        保存成功表格变化位置为假
       this.diaChanged = false
-    },
-    createSaveSelect (e) {
-      if (e === 'createTask') {
-        this.createFileModal = true
-      } else if (e === 'saveTask') {
-        console.log(this.task.name)
-        this.saveFile(this.task.name, this.task.id, this.task.modelData)
-      } else if (e === 'deleteTask') {
-        this.deleteTask()
-      } else {
-        this.runTask()
-      }
     },
     deleteTask () {
       var temp = this.showTree
@@ -654,13 +672,26 @@ export default {
         alert(error)
       })
     },
+    renameTask () {
+      this.renameModal = true
+    },
     selectTree (select) {
       this.showTree = select
     },
     createFile () {
       console.log(this.newFileName)
+      this.manipulateName(this.newFileName)
+      this.newFileName = ''
+    },
+    submitNewName () {
+      this.manipulateName(this.task.name, this.task.id)
+    },
+    manipulateName (newFileName, id) {
       // 刷新任务列表
-      if (this.newFileName !== '') {
+      if (!id) {
+        id = ''
+      }
+      if (newFileName !== '') {
         var temp = this.showTree
         this.showTree = -1
         var recover = () => {
@@ -669,7 +700,8 @@ export default {
         setTimeout(recover, 10)
         //
         var taskForm = new FormData()
-        taskForm.append('name', this.newFileName)
+        taskForm.append('name', newFileName)
+        taskForm.append('id', id)
         this.axios.post('http://' + this.$mainUrl + '/windata-server/web/api/tasks', taskForm).then((res) => {
           if (res.data.content.errorCode === SUCCESS) {
             var taskData = res.data.content.data
@@ -680,7 +712,6 @@ export default {
         }).catch((error) => {
           alert(error)
         })
-        this.newFileName = ''
       } else {
         alert('请输入文件名')
       }
@@ -694,9 +725,9 @@ export default {
       console.log(this.diaChanged)
     },
     showFileDia (fileJson, name, id) {
-//      console.log(fileJson, 'fileJson')
-//      console.log(name, 'name')
-//      console.log(id, 'id')
+      console.log(fileJson, 'fileJson')
+      console.log(name, 'name')
+      console.log(id, 'id')
       // 保存上次数据以便询问是否保存上次数据
       this.querryChange()
       this.lastTask.name = this.task.name
@@ -1030,6 +1061,13 @@ export default {
     width: 24px;
   }
 
+  .rename-task{
+    @include imgIcon('assets/image/rename.png')
+    height:14px;
+    width: 15px;
+    margin-right: 2px;
+  }
+
   .run-task{
     @include imgIcon('assets/image/runtask.jpg');
     height: 20px;
@@ -1041,6 +1079,12 @@ export default {
     height: 16px;
     width: 18px;
     margin-right:4px;
+  }
+
+  .rename-modal{
+    label{
+      margin-right:10px;
+    }
   }
 
   @media (max-width: 1680px){
