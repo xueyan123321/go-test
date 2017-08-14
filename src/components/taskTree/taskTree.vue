@@ -54,7 +54,7 @@
         if (data[0].id !== undefined) {
           this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/task/' + data[0].id).then((res) => {
             console.log(res.data.content.data)
-            this.$emit('getFile', res.data.content.data.viewJson, res.data.content.data.name, res.data.content.data.id)
+            this.$emit('getFile', { fileJson: res.data.content.data.viewJson, name: res.data.content.data.name, id: res.data.content.data.id })
           }).catch((error) => {
             alert(error)
           })
