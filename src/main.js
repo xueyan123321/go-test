@@ -10,6 +10,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import config from './assets/js/config'
 import './assets/scss/index.sass'
+import store from './store'
 
 Vue.use(VueAxios, axios)
 // 全局变量
@@ -24,7 +25,12 @@ window.onbeforeunload = function () {
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
+  store,
   template: '<App/>',
   components: { App }
 })
+
+Vue.prototype.setAxiosInterceptor = () => {
+
+}
 

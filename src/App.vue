@@ -43,15 +43,9 @@
         <Menu-item name="resourceManage" class="left-nav">资源管理</Menu-item>
       </Menu>
       <taskTree v-if="showTree === 'taskTree'"
-                @getFile="transToDiagram"
-                @sentRequest="cover=true"
-                @receiveResponse="cover=false"
-                @responseError="cover=false"></taskTree>
+                @getFile="transToDiagram"></taskTree>
       <resourceManager v-else></resourceManager>
-      <diagram :fileData="fileData"
-                 @sentRequest="cover=true"
-                 @receiveResponse="cover=false"
-                 @responseError="cover=false"></diagram>
+      <diagram :fileData="fileData"></diagram>
     </div>
     <br>
     <!--<button @click="showModel">show model</button>-->
@@ -92,8 +86,13 @@ export default {
     return {
       //      GraphObjectModel: {},
       showTree: 'taskTree',
-      cover: false,
       fileData: {}
+    }
+  },
+  computed: {
+    cover () {
+      console.log(this.$store.getters.cover, 'getterCover')
+      return this.$store.getters.cover
     }
   },
   components: {

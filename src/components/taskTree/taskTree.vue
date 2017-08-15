@@ -18,18 +18,17 @@
       }
     },
     created () {
-      var self = this
-      this.axios.interceptors.request.use(function (config) {
-        self.$emit('sentRequest')
+      this.axios.interceptors.request.use((config) => {
+        this.$store.commit('toggleCover')
         return config
-      }, function (error) {
+      }, (error) => {
         return Promise.reject(error)
       })
-      this.axios.interceptors.response.use(function (response) {
-        self.$emit('receiveResponse')
+      this.axios.interceptors.response.use((response) => {
+        this.$store.commit('toggleCover')
         return response
-      }, function (error) {
-        self.$emit('responseError')
+      }, (error) => {
+        this.$store.commit('toggleCover')
         return Promise.reject(error)
       })
       this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {

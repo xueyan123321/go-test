@@ -6,7 +6,19 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-export const store = new Vuex.Store({
+export default new Vuex.Store({
   state: {
+    cover: false
+  },
+  getters: {
+    cover (state) {
+      return state.cover
+    }
+  },
+  mutations: {
+    toggleCover (state) {
+      // console.log(state.cover, 'toggleCover')
+      state.cover = !state.cover
+    }
   }
 })
