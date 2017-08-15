@@ -23,23 +23,7 @@ window.onbeforeunload = function () {
 // 全局变量
 Object.defineProperty(Vue.prototype, '$go', {value: go})
 Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
-//  设置全局的Axios
-Vue.prototype.setAxiosInterceptor = function () {
-  //  设置axios拦截器
-  this.axios.interceptors.request.use((config) => {
-    this.$store.commit('toggleCover')
-    return config
-  }, (error) => {
-    return Promise.reject(error)
-  })
-  this.axios.interceptors.response.use((response) => {
-    this.$store.commit('toggleCover')
-    return response
-  }, (error) => {
-    this.$store.commit('toggleCover')
-    return Promise.reject(error)
-  })
-}
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

@@ -86,13 +86,8 @@ export default {
     return {
       //      GraphObjectModel: {},
       showTree: 'taskTree',
-      fileData: {}
-    }
-  },
-  computed: {
-    cover () {
-//      console.log(this.$store.getters.cover, 'getterCover')
-      return this.$store.getters.cover
+      fileData: {},
+      cover: false
     }
   },
   components: {
@@ -101,8 +96,27 @@ export default {
     taskTree,
     diagram
   },
+  mounted () {
+    this.setAxiosInterceptor()
+  },
   methods: {
     // initialize the diagram and interceptor
+    setAxiosInterceptor () {
+      //  设置axios拦截器
+      this.axios.interceptors.request.use((config) => {
+        this.cover = true
+        return config
+      }, (error) => {
+        return Promise.reject(error)
+      })
+      this.axios.interceptors.response.use((response) => {
+        this.cover = false
+        return response
+      }, (error) => {
+        this.cover = false
+        return Promise.reject(error)
+      })
+    },
     selectTree (select) {
       this.showTree = select
     },

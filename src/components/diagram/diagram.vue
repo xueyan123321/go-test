@@ -163,7 +163,6 @@
     },
     mounted () {
       //  设置拦截器
-      this.setAxiosInterceptor()
       var go = this.$go
       var $ = go.GraphObject.make
       var {modelData, Diagram} = this.initTheDiagram($, go)
