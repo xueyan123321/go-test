@@ -18,19 +18,6 @@
       }
     },
     created () {
-      this.axios.interceptors.request.use((config) => {
-        this.$store.commit('toggleCover')
-        return config
-      }, (error) => {
-        return Promise.reject(error)
-      })
-      this.axios.interceptors.response.use((response) => {
-        this.$store.commit('toggleCover')
-        return response
-      }, (error) => {
-        this.$store.commit('toggleCover')
-        return Promise.reject(error)
-      })
       this.axios.get('http://' + this.$mainUrl + '/windata-server/web/api/tasks').then((res) => {
         if (res.data.content.errorCode === SUCCESS) {
           var tasks = res.data.content.data

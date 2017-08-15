@@ -13,14 +13,32 @@ import './assets/scss/index.sass'
 import store from './store'
 
 Vue.use(VueAxios, axios)
-// 全局变量
-Object.defineProperty(Vue.prototype, '$go', {value: go})
-Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
+
 Vue.use(iView)
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
 window.onbeforeunload = function () {
   return '请您确保保存修改的文档'
+}
+// 全局变量
+Object.defineProperty(Vue.prototype, '$go', {value: go})
+Object.defineProperty(Vue.prototype, '$mainUrl', {value: config.mainUrl})
+//  设置全局的Axios
+Vue.prototype.setAxiosInterceptor = function () {
+  //  设置axios拦截器
+  this.axios.interceptors.request.use((config) => {
+    this.$store.commit('toggleCover')
+    return config
+  }, (error) => {
+    return Promise.reject(error)
+  })
+  this.axios.interceptors.response.use((response) => {
+    this.$store.commit('toggleCover')
+    return response
+  }, (error) => {
+    this.$store.commit('toggleCover')
+    return Promise.reject(error)
+  })
 }
 /* eslint-disable no-new */
 new Vue({
@@ -29,8 +47,4 @@ new Vue({
   template: '<App/>',
   components: { App }
 })
-
-Vue.prototype.setAxiosInterceptor = () => {
-
-}
 

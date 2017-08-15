@@ -17,7 +17,8 @@ export default new Vuex.Store({
   },
   mutations: {
     toggleCover (state) {
-      // console.log(state.cover, 'toggleCover')
+      //  state.cover = true
+      console.log(state.cover, 'toggleCover')
       state.cover = !state.cover
     }
   }

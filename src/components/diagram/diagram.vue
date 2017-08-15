@@ -171,22 +171,6 @@
       this.Diagram = Diagram
     },
     methods: {
-      setAxiosInterceptor () {
-        //  设置axios拦截器
-        this.axios.interceptors.request.use((config) => {
-          this.$store.commit('toggleCover')
-          return config
-        }, (error) => {
-          return Promise.reject(error)
-        })
-        this.axios.interceptors.response.use((response) => {
-          this.$store.commit('toggleCover')
-          return response
-        }, (error) => {
-          this.$store.commit('toggleCover')
-          return Promise.reject(error)
-        })
-      },
       initTheDiagram ($, go) {
         var self = this
         console.log(this.$refs.diagram.id)

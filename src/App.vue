@@ -91,7 +91,7 @@ export default {
   },
   computed: {
     cover () {
-      console.log(this.$store.getters.cover, 'getterCover')
+//      console.log(this.$store.getters.cover, 'getterCover')
       return this.$store.getters.cover
     }
   },
